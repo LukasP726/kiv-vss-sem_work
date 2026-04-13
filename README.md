@@ -2,6 +2,17 @@
 
 Repo obsahuje NetLogo modely (`examples/virus1..4.nlogox`) a skripty pro automatizované BehaviorSpace experimenty.
 
+## Možnosti spuštění skriptů (testů)
+
+1. Lokální spuštění skriptů ze složky `scripts` (`.ps1` na Windows, `.sh` na Linuxu) při lokálně nainstalovaném NetLogo `7.0.3`; na Linuxu je k dispozici zjednodušené spuštění přes `Makefile`.
+2. Spuštění experimentů v Docker kontejneru bez lokální instalace NetLogo/Java/Python; požadován je Docker.
+
+## Možnosti spuštění jednotlivých simulací (GUI)
+
+1. Lokální spuštění NetLogo GUI na vlastním stroji s nainstalovaným NetLogo `7.0.3`.
+2. Spuštění NetLogo GUI z Docker kontejneru na Linuxu s X11 forwardingem.
+(Na Windows (včetně WSL) není spuštění NetLogo GUI z Docker kontejneru podporováno.)
+
 ## Požadavky
 
 ### Lokální běh
@@ -15,7 +26,7 @@ Repo obsahuje NetLogo modely (`examples/virus1..4.nlogox`) a skripty pro automat
 
 - Docker Engine / Docker Desktop
 
-## Rychlé spuštění přes Makefile (Linux/WSL)
+## Rychlé spuštění přes Makefile (Linux)
 
 Nastavení cesty k NetLogo přes proměnnou `NETLOGO`:
 
@@ -99,7 +110,7 @@ docker run --rm -it -v "$(pwd):/workspace" kiv-vss-sem /bin/bash
 
 ## Spuštění NetLogo GUI v Dockeru (Linux/X11)
 
-NetLogo GUI (`NetLogo_Console`) vyžaduje X11 display z host systému.
+NetLogo GUI (`NetLogo_Console`) vyžaduje X11 display z host systému. Tato varianta je určena pro Linux a není podporována na Windows ani ve WSL.
 
 Povolení lokálního přístupu na X server:
 
