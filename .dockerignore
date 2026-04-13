@@ -1,0 +1,7 @@
+.git
+.cursor
+out
+doc
+agent-transcripts
+terminals
+*.log
