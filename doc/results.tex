@@ -1,0 +1,349 @@
+\section{Výsledky experimentů}
+
+\subsection{Cíl vyhodnocení}
+
+Cílem této části je vyhodnotit chování čtyř navazujících simulací a ověřit hypotézy formulované v teoretické části. Důraz je kladen na srovnatelnost scénářů, proto jsou napříč simulacemi používány jednotné metriky a stejný postup vyhodnocení.
+
+\subsection{Experimentální metodika}
+
+\textbf{Princip experimentů:}
+\begin{itemize}
+\item pro každou simulaci je definován referenční scénář (výchozí nastavení)
+\item následně je aplikován přístup \textit{one-factor-at-a-time} (OFAT)
+\item pro vybrané dvojice parametrů jsou provedeny doplňkové kombinované scénáře
+\item každá konfigurace je opakována pro více seedů
+\end{itemize}
+
+\textbf{Počet opakování:}
+\begin{itemize}
+\item každá konfigurace: \textbf{10} opakování (\texttt{seed = 1..10})
+\end{itemize}
+
+\textbf{Úrovně parametrů (low/mid/high):}
+\begin{table}[h]
+\centering
+\begin{tabular}{l c c c}
+\hline
+\textbf{Parametr} & \textbf{Low} & \textbf{Mid} & \textbf{High} \\
+\hline
+\texttt{num-people} & 300 & 500 & 800 \\
+\texttt{transmission-prob} & 30 & 60 & 85 \\
+\texttt{incubation-days} & 2 & 5 & 9 \\
+\texttt{mean-illness-duration} & 7 & 14 & 21 \\
+\texttt{standard-speed} & 1 & 2 & 3 \\
+\texttt{fatality-rate} & 0.5 & 1.8 & 4.0 \\
+\texttt{healthcare-capacity} & 80 & 140 & 240 \\
+\texttt{overload-multiplier} & 1.2 & 2.0 & 3.0 \\
+\texttt{resource-stock} & 600 & 1400 & 2600 \\
+\texttt{resource-regeneration} & 2 & 8 & 20 \\
+\texttt{treatment-cost} & 6 & 12 & 24 \\
+\texttt{resource-penalty} & 1.2 & 1.8 & 2.8 \\
+\texttt{vaccination-rate} & 20 & 50 & 80 \\
+\texttt{high-risk-share} & 10 & 20 & 35 \\
+\hline
+\end{tabular}
+\caption{Doporučené úrovně parametrů pro OFAT a kombinované scénáře}
+\label{tab:param_levels}
+\end{table}
+
+\textbf{Délka běhu:}
+\begin{itemize}
+\item simulace běží do stabilizace nebo do pevného limitu 8760 ticků (dle implementace modelu)
+\end{itemize}
+
+\subsection{Sledované metriky}
+
+V každém scénáři jsou sledovány následující metriky:
+\begin{itemize}
+\item \textbf{Peak infected} -- maximální počet současně infekčních agentů
+\item \textbf{Total deaths} -- celkový počet úmrtí
+\item \textbf{Time to stabilization} -- čas do stabilizace systému
+\item \textbf{Wave count / reinfections} -- počet vln nebo indikátor opětovných nákaz
+\end{itemize}
+
+U modelů se zdroji se navíc sleduje:
+\begin{itemize}
+\item \textbf{Resource depletion ratio} -- podíl času s nízkou nebo nulovou zásobou zdrojů
+\item \textbf{Over-capacity load} -- přetížení kapacity systému v čase
+\end{itemize}
+
+\subsection{Referenční scénáře}
+
+Tabulka~\ref{tab:baseline} uvádí výchozí konfigurace použité jako baseline.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l l}
+\hline
+\textbf{Model} & \textbf{Referenční konfigurace} \\
+\hline
+Simulace 1 & výchozí hodnoty sliderů \\
+Simulace 2 & výchozí hodnoty sliderů \\
+Simulace 3 & výchozí hodnoty sliderů \\
+Simulace 4 & výchozí hodnoty sliderů \\
+\hline
+\end{tabular}
+\caption{Referenční scénáře (baseline)}
+\label{tab:baseline}
+\end{table}
+
+\subsection{Minimální sada scénářů}
+
+Aby byl experiment zvládnutelný, ale zároveň obhajitelný, je doporučena následující minimální sada:
+\begin{itemize}
+\item baseline pro každý model
+\item OFAT: 4 klíčové parametry na model, každý ve 3 úrovních (low/mid/high)
+\item 2 kombinované scénáře na model (interakce parametrů)
+\item 10 seedů na každou konfiguraci
+\end{itemize}
+
+Tím vznikne přibližně 15 konfigurací na model, tj. cca 150 běhů na model a 600 běhů celkem.
+
+\subsection{Výsledky Simulace 1}
+
+\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c}
+\hline
+\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\hline
+Final susceptible & 0.0 \\
+Final exposed & 0.0 \\
+Final infected & 0.0 \\
+Final recovered & 500.0 \\
+Ever infected & 500.0 \\
+Deaths & 0.0 \\
+Time to stabilization (ticks) & 1327.4 \\
+\hline
+\end{tabular}
+\caption{Baseline výsledky Simulace 1}
+\label{tab:s1_baseline}
+\end{table}
+
+\subsubsection{OFAT experimenty}
+
+V Simulaci 1 byly měněny parametry:
+\begin{itemize}
+\item \texttt{transmission-prob}
+\item \texttt{incubation-days}
+\item \texttt{standard-speed}
+\item \texttt{num-people}
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c c c c}
+\hline
+\textbf{Parametr} & \textbf{Úroveň} & \textbf{Peak infected} & \textbf{Time to stab.} & \textbf{Poznámka} \\
+\hline
+\texttt{transmission-prob} & low (30) & 0.0 (final I) & 1596.8 & nejpomalejší do stabilizace \\
+\texttt{transmission-prob} & mid (60) & 0.0 (final I) & 1369.5 & referenční průběh \\
+\texttt{transmission-prob} & high (85) & 0.0 (final I) & 1285.7 & nejrychlejší do stabilizace \\
+\hline
+\end{tabular}
+\caption{Ukázka OFAT výsledků pro Simulaci 1}
+\label{tab:s1_ofat}
+\end{table}
+
+\textbf{Interpretace:}  
+Baseline konfigurace vede k úplnému promoření populace bez úmrtí; systém se stabilizuje přibližně po 1327 tickech. OFAT potvrzuje, že s vyšším \texttt{transmission-prob} se epidemie uzavírá rychleji (kratší doba do stabilizace).
+
+\subsection{Výsledky Simulace 2}
+
+\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c}
+\hline
+\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\hline
+Final susceptible & 0.0 \\
+Final exposed & 0.0 \\
+Final infected & 0.0 \\
+Final recovered & 484.1 \\
+Ever infected & 500.0 \\
+Deaths & 15.9 \\
+Time to stabilization (ticks) & 1332.2 \\
+\hline
+\end{tabular}
+\caption{Baseline výsledky Simulace 2}
+\label{tab:s2_baseline}
+\end{table}
+
+\subsubsection{Vliv kapacity systému}
+
+Zde je klíčový vztah mezi \texttt{healthcare-capacity}, \texttt{overload-multiplier} a \texttt{fatality-rate}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{c c c c}
+\hline
+\textbf{Capacity} & \textbf{Overload mult.} & \textbf{Total deaths} & \textbf{Over-capacity load} \\
+\hline
+low (80) & low (1.2) & 11.8 & N/A \\
+low (80) & high (3.0) & 26.6 & N/A \\
+high (240) & low (1.2) & 10.7 & N/A \\
+high (240) & high (3.0) & 16.9 & N/A \\
+\hline
+\end{tabular}
+\caption{Citlivost Simulace 2 na kapacitu a přetížení}
+\label{tab:s2_capacity}
+\end{table}
+
+\textbf{Interpretace:}  
+Při výchozím nastavení vzniká nenulová úmrtnost (průměrně 15.9 úmrtí), zatímco v Simulaci 1 byla nulová. Grid scénář potvrzuje, že nejhorší kombinace je nízká kapacita + vysoký overload multiplikátor.
+
+\subsection{Výsledky Simulace 3}
+
+\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c}
+\hline
+\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\hline
+Final susceptible & 0.0 \\
+Final exposed & 42.8 \\
+Final infected & 124.6 \\
+Final recovered & 218.6 \\
+Ever infected & 500.0 \\
+Deaths & 114.0 \\
+Final resources & 1396.8 \\
+Runtime (ticks) & 8760.0 \\
+\hline
+\end{tabular}
+\caption{Baseline výsledky Simulace 3}
+\label{tab:s3_baseline}
+\end{table}
+
+\subsubsection{Vliv omezených zdrojů}
+
+Byly testovány parametry \texttt{resource-stock}, \texttt{resource-regeneration}, \texttt{treatment-cost} a \texttt{resource-penalty}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+\textbf{Stock} & \textbf{Regen} & \textbf{Cost} & \textbf{Deaths} & \textbf{Resource depletion} \\
+\hline
+low (600) & low (2) & high (24) & 145.3 & vysoká (final res. 17.6) \\
+low (600) & high (20) & high (24) & 109.0 & nízká až střední (final res. 574.8) \\
+high (2600) & low (2) & low (6) & 114.0 & střední (final res. 15.6) \\
+high (2600) & high (20) & low (6) & 109.0 & velmi nízká (final res. 2599.4) \\
+\hline
+\end{tabular}
+\caption{Vliv zdrojových parametrů v Simulaci 3}
+\label{tab:s3_resources}
+\end{table}
+
+\textbf{Interpretace:}  
+Model v baseline nedosáhne stabilizace před limitem 8760 ticků a vykazuje perzistentní infekci (nenulové E i I na konci běhu), což je konzistentní s chováním modelu s reinfekcí a omezenými zdroji.
+
+\subsection{Výsledky Simulace 4}
+
+\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c}
+\hline
+\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\hline
+Final susceptible & 25.0 \\
+Final exposed & 33.1 \\
+Final infected & 98.2 \\
+Final recovered & 284.6 \\
+Ever infected & 475.0 \\
+Deaths & 34.2 \\
+Final resources & 1394.8 \\
+Runtime (ticks) & 8760.0 \\
+\hline
+\end{tabular}
+\caption{Baseline výsledky Simulace 4}
+\label{tab:s4_baseline}
+\end{table}
+
+\subsubsection{Porovnání strategií}
+
+Strategie jsou reprezentovány parametrem \texttt{strategy-mode}. Dále byl sledován vliv \texttt{high-risk-share} a \texttt{vaccination-rate}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+\textbf{Strategy mode} & \textbf{High-risk share} & \textbf{Vacc. rate} & \textbf{Deaths} & \textbf{Peak infected} \\
+\hline
+0 & low (10) & low (20) & 74.7 & 124.1 (final I) \\
+1 & low (10) & low (20) & 103.6 & 100.5 (final I) \\
+2 & low (10) & low (20) & 76.4 & 119.0 (final I) \\
+0 & high (35) & high (80) & 14.5 & 80.1 (final I) \\
+1 & high (35) & high (80) & 21.4 & 78.6 (final I) \\
+2 & high (35) & high (80) & 14.3 & 78.6 (final I) \\
+\hline
+\end{tabular}
+\caption{Porovnání strategií alokace v Simulaci 4}
+\label{tab:s4_strategy}
+\end{table}
+
+\textbf{Interpretace:}  
+V baseline konfiguraci je celkový podíl nakažených nižší než v Simulaci 3 (ever infected 475 vs. 500), současně výrazně klesá i úmrtnost (34.2 vs. 114.0), což naznačuje přínos kombinace očkování a strategie alokace zdrojů.
+
+\subsection{Srovnání modelů}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l c c c c}
+\hline
+\textbf{Model} & \textbf{Peak infected} & \textbf{Deaths} & \textbf{Time to stab.} & \textbf{Poznámka} \\
+\hline
+Simulace 1 & 0.0 & 0.0 & 1327.4 & baseline \\
+Simulace 2 & 0.0 & 15.9 & 1332.2 & kapacita systému \\
+Simulace 3 & 124.6 (final I) & 114.0 & 8760.0 (limit) & zdroje + reinfekce \\
+Simulace 4 & 98.2 (final I) & 34.2 & 8760.0 (limit) & strategie + očkování \\
+\hline
+\end{tabular}
+\caption{Souhrnné porovnání všech modelů}
+\label{tab:all_models}
+\end{table}
+
+\subsection{Vyhodnocení hypotéz}
+
+\textbf{H1:} Zvýšení hustoty populace vede k nelineárnímu růstu rychlosti šíření.  
+Průběžně: \textbf{čeká na OFAT scénáře} (zatím vyhodnocen pouze baseline).
+
+\textbf{H2:} Omezené zdroje zpomalují šíření, ale mohou způsobit lokální kolapsy.  
+Průběžně: \textbf{částečně potvrzeno} baseline porovnáním Simulace 2 vs. 3 (vyšší perzistence infekce a výrazný nárůst úmrtnosti při zdrojové dynamice).
+
+\textbf{H3:} Heterogenita agentů stabilizuje systém.  
+Průběžně: \textbf{částečně potvrzeno} baseline porovnáním Simulace 3 vs. 4 (nižší úmrtnost a nižší celková infekce při heterogenních strategiích).
+
+\subsection{Shrnutí}
+
+TODO: 1--2 odstavce se závěrečnou interpretací:
+\begin{itemize}
+\item hlavní zjištění
+\item praktický význam výsledků
+\item omezení experimentu
+\item návrhy pro další rozšíření
+\end{itemize}
+
+\subsection{Automatizace a replikovatelnost}
+
+Pro plně replikovatelný běh je doporučeno využít \textbf{BehaviorSpace} v headless režimu:
+\begin{itemize}
+\item definovat experimenty v NetLogo (pojmenované scénáře)
+\item spouštět je skriptem s fixním počtem opakování a seedů
+\item exportovat výsledky do CSV
+\item agregovat průměr, směrodatnou odchylku a percentily
+\end{itemize}
+
+Praktický postup a skripty jsou uvedeny v souborech:
+\begin{itemize}
+\item \texttt{automation.md}
+\item \texttt{run\_behaviorspace.ps1}
+\item \texttt{aggregate\_results.py}
+\end{itemize}

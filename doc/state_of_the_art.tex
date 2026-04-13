@@ -1,0 +1,295 @@
+\section{Existující modely a přístupy}
+
+Agent-based simulace šíření jevů v populaci má dlouhou historii a je široce využívána v epidemiologii, sociálních vědách i informatice. Základní modely lze rozdělit podle úrovně abstrakce a způsobu reprezentace populace.
+
+\subsection{Klasické kompartmentové modely}
+
+Mezi nejjednodušší přístupy patří kompartmentové modely, například:
+
+\begin{itemize}
+\item SIR (Susceptible--Infected--Recovered)
+\item SEIR (rozšíření o exposed stav)
+\end{itemize}
+
+Tyto modely:
+\begin{itemize}
+\item pracují s agregovanými počty jedinců
+\item jsou typicky formulovány jako diferenciální rovnice
+\end{itemize}
+
+Nevýhody:
+\begin{itemize}
+\item absence prostorové informace
+\item nemožnost modelovat individuální chování
+\end{itemize}
+
+\subsection{Agent-based modely}
+
+Agent-based modely (ABM) představují jemnější přístup:
+
+\begin{itemize}
+\item každý jedinec je modelován explicitně
+\item interakce probíhají lokálně
+\end{itemize}
+
+Typické vlastnosti:
+\begin{itemize}
+\item emergentní chování
+\item citlivost na počáteční podmínky
+\end{itemize}
+
+Použití:
+\begin{itemize}
+\item modelování epidemií
+\item šíření informací
+\item kolektivní chování (swarm intelligence)
+\end{itemize}
+
+\subsection{Celulární automaty}
+
+Celulární automaty představují diskrétní model prostoru:
+
+\begin{itemize}
+\item prostor je rozdělen na mřížku buněk
+\item každá buňka má stav
+\item stav se aktualizuje podle lokálních pravidel
+\end{itemize}
+
+Použití:
+\begin{itemize}
+\item šíření požáru
+\item simulace kapalin
+\item růst struktur
+\end{itemize}
+
+Ve srovnání s ABM:
+\begin{itemize}
+\item jednodušší implementace
+\item méně flexibilní reprezentace agentů
+\end{itemize}
+
+\subsection{Síťové modely}
+
+Další přístup využívá explicitní grafové struktury:
+
+\begin{itemize}
+\item uzly reprezentují jedince
+\item hrany reprezentují interakce
+\end{itemize}
+
+Typy sítí:
+\begin{itemize}
+\item náhodné grafy (Erdős--Rényi)
+\item scale-free sítě
+\item small-world sítě
+\end{itemize}
+
+Tyto modely umožňují studovat:
+\begin{itemize}
+\item vliv topologie na šíření
+\item vznik super-spreaderů
+\end{itemize}
+
+\section{Existující nástroje a prostředí}
+
+\subsection{NetLogo}
+
+NetLogo je specializované prostředí pro agent-based simulace.
+
+Vlastnosti:
+\begin{itemize}
+\item deklarativní definice agentů (turtles) a prostředí (patches)
+\item diskrétní časový model (ticks)
+\item vestavěná vizualizace
+\end{itemize}
+
+Výhody:
+\begin{itemize}
+\item rychlá implementace modelů
+\item vhodné pro experimentální analýzu
+\end{itemize}
+
+Omezení:
+\begin{itemize}
+\item omezený výkon
+\item menší kontrola nad nízkoúrovňovým chováním
+\end{itemize}
+
+\subsection{Mesa (Python)}
+
+Mesa je knihovna pro agent-based simulace v jazyce Python.
+
+Vlastnosti:
+\begin{itemize}
+\item flexibilní definice agentů
+\item integrace s Python ekosystémem
+\end{itemize}
+
+Nevýhody:
+\begin{itemize}
+\item vyšší runtime overhead
+\end{itemize}
+
+\subsection{Repast}
+
+Repast je pokročilý framework pro ABM:
+
+\begin{itemize}
+\item podpora velkých simulací
+\item integrace s Java/C++
+\end{itemize}
+
+Nevýhody:
+\begin{itemize}
+\item vyšší komplexita
+\end{itemize}
+
+\subsection{Porovnání nástrojů}
+
+\begin{center}
+\begin{tabular}{lccc}
+\textbf{Nástroj} & \textbf{Jednoduchost} & \textbf{Výkon} & \textbf{Flexibilita} \
+NetLogo & vysoká & nízký & střední \
+Mesa & střední & nízký & vysoká \
+Repast & nízká & vysoký & vysoká \
+\end{tabular}
+\end{center}
+
+\section{Volba přístupu}
+
+Na základě analýzy existujících modelů a nástrojů byl zvolen následující přístup:
+
+\begin{itemize}
+\item agent-based model pro zachycení individuálního chování
+\item diskrétní časová simulace
+\item implementace v prostředí NetLogo
+\end{itemize}
+
+Tato kombinace umožňuje:
+
+\begin{itemize}
+\item snadnou implementaci a vizualizaci
+\item dostatečnou flexibilitu pro experimenty
+\item zaměření na emergentní jevy namísto nízkoúrovňových detailů
+\end{itemize}
+
+Zvolený přístup je vhodný zejména pro replikační studii, kde je cílem analyzovat známý model a ověřit jeho vlastnosti za různých podmínek.
+
+
+\section{Specifikace simulace}
+
+Tato práce se zaměřuje na návrh a implementaci simulace založené na agentním přístupu (agent-based simulation), která modeluje šíření jevu v populaci při omezených zdrojích a interakcích mezi jednotlivými entitami.
+
+\subsection{Typ simulace}
+
+Navržený model spadá do kategorie:
+
+\begin{itemize}
+\item \textbf{mikroskopická simulace} -- modeluje jednotlivé entity (agenty)
+\item \textbf{agent-based model (ABM)} -- chování systému vzniká z lokálních interakcí
+\item \textbf{diskrétní časová simulace} -- systém je aktualizován v diskrétních krocích (ticks)
+\end{itemize}
+
+Každý agent reprezentuje autonomní jednotku s vlastním stavem a pravidly chování.
+
+\subsection{Popis modelu}
+
+Model reprezentuje populaci agentů, kteří se pohybují v prostoru a interagují s ostatními agenty ve svém okolí.
+
+Každý agent je charakterizován:
+\begin{itemize}
+\item stavem (např. zdravý, infikovaný, zotavený)
+\item pozicí v prostoru
+\item množstvím dostupných zdrojů
+\end{itemize}
+
+Interakce mezi agenty probíhají lokálně:
+\begin{itemize}
+\item přenos jevu (např. infekce) při kontaktu
+\item konkurence o omezené zdroje
+\end{itemize}
+
+\subsection{Vstupní parametry}
+
+Simulace je parametrizována následujícími vstupy:
+
+\begin{itemize}
+\item počet agentů
+\item hustota populace
+\item pravděpodobnost interakce
+\item pravděpodobnost přenosu jevu
+\item rychlost pohybu agentů
+\item množství dostupných zdrojů
+\item strategie využívání zdrojů
+\end{itemize}
+
+Distribuce některých parametrů může být náhodná:
+\begin{itemize}
+\item prostorové rozložení agentů
+\item počáteční stav systému
+\end{itemize}
+
+\subsection{Výstupy simulace}
+
+Simulace bude produkovat následující metriky:
+
+\begin{itemize}
+\item počet agentů v jednotlivých stavech v čase
+\item rychlost šíření jevu
+\item maximální zatížení systému
+\item doba do stabilizace systému
+\end{itemize}
+
+Výsledky budou analyzovány pomocí:
+\begin{itemize}
+\item časových řad
+\item statistických agregací (průměr, percentily)
+\end{itemize}
+
+\subsection{Hypotézy}
+
+Práce bude ověřovat následující hypotézy:
+
+\begin{itemize}
+\item zvýšení hustoty populace vede k nelineárnímu růstu rychlosti šíření
+\item omezené zdroje zpomalují šíření, ale mohou způsobit lokální kolapsy
+\item heterogenita agentů (např. rozdílné chování) stabilizuje systém
+\end{itemize}
+
+\subsection{Metodologie experimentů}
+
+Experimenty budou prováděny opakovaně s různými parametry:
+
+\begin{itemize}
+\item změna hustoty populace
+\item změna pravděpodobnosti přenosu
+\item změna množství zdrojů
+\end{itemize}
+
+Každý experiment bude:
+\begin{itemize}
+\item opakován vícekrát (různé seedy)
+\item vyhodnocen statisticky
+\end{itemize}
+
+\subsection{Použitý nástroj}
+
+Simulace bude implementována v prostředí \textbf{NetLogo}.
+
+Důvody volby:
+\begin{itemize}
+\item přímá podpora agent-based modelů
+\item jednoduchá definice lokálních interakcí
+\item vizualizace průběhu simulace
+\end{itemize}
+
+Omezení:
+\begin{itemize}
+\item omezená kontrola nad časovým modelem
+\item nižší výkon pro velké simulace
+\end{itemize}
+
+\subsection{Shrnutí}
+
+Navržený model umožňuje studovat emergentní chování systému vznikající z jednoduchých lokálních pravidel. Zaměřuje se zejména na vliv interakcí, hustoty a omezených zdrojů na dynamiku systému.
+

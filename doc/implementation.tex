@@ -1,0 +1,122 @@
+\section{Implementace simulací}
+
+Tato část popisuje praktickou implementaci čtyř navazujících modelů v prostředí NetLogo. Modely jsou navrženy tak, aby měly podobnou strukturu rozhraní, postupně rostoucí složitost a aby umožňovaly srovnatelné experimenty.
+
+\subsection{Simulace 1: Základní SEIR}
+
+\textbf{Účel:}
+\begin{itemize}
+\item ověřit základní mechaniku šíření v populaci
+\item získat referenční průběh bez dalších zásahů
+\end{itemize}
+
+\textbf{Hlavní parametry:}
+\begin{itemize}
+\item \texttt{num-people} -- velikost populace
+\item \texttt{init-infected} -- počet počátečně nakažených
+\item \texttt{transmission-prob} -- pravděpodobnost přenosu při kontaktu
+\item \texttt{incubation-days} -- délka inkubace
+\item \texttt{mean-illness-duration} -- průměrná doba nemoci
+\item \texttt{standard-speed} -- rychlost pohybu agentů
+\end{itemize}
+
+\textbf{Očekávané chování při změnách parametrů:}
+\begin{itemize}
+\item vyšší \texttt{transmission-prob} urychluje nástup epidemické vlny
+\item vyšší \texttt{num-people} zvyšuje počet kontaktů a absolutní velikost vlny
+\item vyšší \texttt{incubation-days} oddaluje nástup infekční fáze
+\item vyšší \texttt{standard-speed} zvyšuje promíchání populace a kontaktů
+\end{itemize}
+
+\subsection{Simulace 2: SEIR + úmrtnost + kapacita systému}
+
+\textbf{Účel:}
+\begin{itemize}
+\item rozšířit model o závažné průběhy (úmrtí)
+\item zavést první explicitní omezený zdroj (kapacita systému)
+\end{itemize}
+
+\textbf{Nové prvky oproti Simulaci 1:}
+\begin{itemize}
+\item \texttt{fatality-rate} -- základní pravděpodobnost úmrtí
+\item kapacitní parametr (např. \texttt{healthcare-capacity}) reprezentující počet současně zvládnutelných vážných případů
+\item při překročení kapacity se efektivní úmrtnost zvyšuje
+\end{itemize}
+
+\textbf{Očekávané chování při změnách parametrů:}
+\begin{itemize}
+\item nižší kapacita vede k prudšímu nárůstu úmrtí při vrcholu vlny
+\item vyšší \texttt{transmission-prob} zvyšuje riziko překročení kapacity
+\item vyšší \texttt{fatality-rate} zvyšuje celkové ztráty i bez přetížení
+\end{itemize}
+
+\subsection{Simulace 3: Dočasná imunita, reinfekce a zdroje}
+
+\textbf{Účel:}
+\begin{itemize}
+\item modelovat dlouhodobou dynamiku (více vln)
+\item zavést omezené zdroje využívané jednotlivými agenty
+\end{itemize}
+
+\textbf{Nové prvky oproti Simulaci 2:}
+\begin{itemize}
+\item dočasná imunita po uzdravení (\texttt{immunity-hours})
+\item reinfekce po oslabení imunity
+\item parametr dostupnosti zdrojů (např. \texttt{resource-stock} nebo \texttt{resource-regeneration})
+\item spotřeba zdrojů během nemoci (léčba, izolace, péče)
+\end{itemize}
+
+\textbf{Očekávané chování při změnách parametrů:}
+\begin{itemize}
+\item kratší doba imunity zvyšuje pravděpodobnost další vlny
+\item nižší zásoba nebo pomalejší obnova zdrojů prodlužuje období vysokého zatížení
+\item při vyčerpání zdrojů roste podíl těžkých průběhů a úmrtí
+\end{itemize}
+
+\subsection{Simulace 4: Strategie řízení zdrojů a zásahy}
+
+\textbf{Účel:}
+\begin{itemize}
+\item porovnat různé strategie alokace omezených zdrojů
+\item experimentálně ověřit, které nastavení nejlépe stabilizuje systém
+\end{itemize}
+
+\textbf{Nové prvky oproti Simulaci 3:}
+\begin{itemize}
+\item volba strategie (např. priorita rizikových, priorita prvních případů, rovnoměrná alokace)
+\item volitelný zásah (např. očkování části populace)
+\item přímé porovnání scénářů při stejném seedu a stejných vstupních parametrech
+\end{itemize}
+
+\textbf{Očekávané chování při změnách parametrů:}
+\begin{itemize}
+\item cílená alokace zdrojů typicky snižuje maxima zatížení systému
+\item rovnoměrná alokace bývá robustnější při nejistotě, ale nemusí minimalizovat úmrtí
+\item kombinace strategie a očkování zpravidla zkracuje dobu stabilizace
+\end{itemize}
+
+\subsection{Doporučená metodika experimentů}
+
+Pro každou simulaci je vhodné zachovat stejný experimentální postup:
+\begin{itemize}
+\item pro každou kombinaci parametrů spustit více opakování s různými seedy
+\item sledovat časové řady stavů S/E/I/R, úmrtí, zatížení systému a stav zdrojů
+\item vyhodnocovat průměr, medián, percentily a extrémy
+\item porovnávat scénáře podle metrik:
+  \begin{itemize}
+  \item maximální zatížení systému
+  \item celkový počet úmrtí
+  \item doba do stabilizace
+  \item počet následných vln
+  \end{itemize}
+\end{itemize}
+
+\subsection{Vazba na cíle práce}
+
+Tato čtveřice modelů odpovídá požadavku replikační studie:
+\begin{itemize}
+\item začíná jednoduchým ABM modelem
+\item postupně přidává realističtější mechanismy
+\item umožňuje analyzovat vliv hustoty, přenosu i omezených zdrojů
+\item vytváří jasný experimentální rámec pro porovnání variant
+\end{itemize}
