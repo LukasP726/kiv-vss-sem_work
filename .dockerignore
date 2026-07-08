@@ -5,3 +5,4 @@ doc
 agent-transcripts
 terminals
 *.log
+Dockerfile
