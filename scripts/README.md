@@ -1,95 +1,30 @@
-# Automatizace experimentů (NetLogo)
+# Automatizace experimentů
 
-Tento dokument popisuje, jak spouštět experimenty replikovatelně a bez ručního klikání.
+Adresář `scripts` obsahuje pomocné skripty pro hromadné spuštění připravených
+BehaviorSpace experimentů v NetLogo a následnou agregaci jejich výstupů. Skripty
+jsou určeny pro reprodukovatelné získání CSV souborů používaných ve výsledkové
+části dokumentace.
 
-## 1) Doporučený workflow
+## Přehled skriptů
 
-1. V každém modelu (`virus1`..`virus4`) vytvořit v BehaviorSpace experiment(y):
-   - stejné názvy scénářů napříč modely (např. `baseline`, `ofat_transmission`, `combo_capacity_resources`)
-   - repetitions = `10`
-   - `run metrics every step` zapnout jen pokud opravdu potřebuješ časové řady
-   - jinak sbírat jen finální metriky (rychlejší běh)
-2. Pro běžné vyhodnocení spusť všechny připravené experimenty skriptem `scripts/run_all_experiments.ps1` (Windows) nebo `scripts/run_all_experiments.sh` (Linux/WSL).
-3. Ruční spuštění `aggregate_results.py` je potřeba jen tehdy, když spouštíš jeden vlastní BehaviorSpace experiment mimo připravené hromadné skripty.
+- `run_behaviorspace.ps1` / `run_behaviorspace.sh` spustí jeden zadaný
+  BehaviorSpace experiment v headless režimu NetLogo.
+- `run_all_baselines.ps1` / `run_all_baselines.sh` spustí baseline scénáře pro
+  modely `virus1` až `virus4`.
+- `run_extended_experiments.ps1` / `run_extended_experiments.sh` spustí
+  rozšířené OFAT a grid experimenty.
+- `run_all_experiments.ps1` / `run_all_experiments.sh` spustí baseline i
+  rozšířené experimenty v jednom kroku.
+- `aggregate_results.py` agreguje raw CSV výstupy z BehaviorSpace do souhrnných
+  tabulek.
 
-## 2) Headless běh
+Hromadné skripty volají `aggregate_results.py` automaticky, takže po jejich
+dokončení vznikají jak raw CSV soubory, tak odpovídající `*_summary.csv`
+soubory v adresáři `out`.
 
-Použití PowerShell skriptu:
+## Spuštění všech experimentů
 
-```powershell
-.\scripts\run_behaviorspace.ps1 `
-  -NetLogoPath "C:\Program Files\NetLogo 7.0.0\NetLogo_Console.exe" `
-  -ModelPath ".\examples\virus4.nlogox" `
-  -ExperimentName "baseline_auto" `
-  -OutputCsv ".\out\virus4_baseline.csv"
-```
-
-Linux/WSL:
-
-```bash
-./scripts/run_behaviorspace.sh \
-  "/opt/NetLogo-7.0.3" \
-  "./examples/virus4.nlogox" \
-  "baseline_auto" \
-  "./out/virus4_baseline.csv"
-```
-
-## 3) Agregace výsledků
-
-Skripty `run_all_baselines.*`, `run_extended_experiments.*` a `run_all_experiments.*`
-volají `aggregate_results.py` automaticky. Ruční agregaci použij pouze pro
-samostatně vytvořený CSV export:
-
-```powershell
-python .\scripts\aggregate_results.py `
-  --input ".\out\virus4_baseline.csv" `
-  --metrics "m_final_susceptible,m_final_exposed,m_final_infected,m_final_recovered,m_ever_infected,m_ticks,m_deaths,m_final_resources" `
-  --output ".\out\virus4_baseline_summary.csv"
-```
-
-> Pozn.: V modelech jsou připravené reportery metrik se jmény `m_*`, aby byly výstupní sloupce konzistentní.
-
-## 4) Hromadný běh všech baseline scénářů
-
-Použití skriptu:
-
-```powershell
-.\scripts\run_all_baselines.ps1 `
-  -NetLogoPath "C:\Program Files\NetLogo 7.0.3\NetLogo_Console.exe"
-```
-
-Linux/WSL:
-
-```bash
-./scripts/run_all_baselines.sh "/opt/NetLogo-7.0.3"
-```
-
-Ten vytvoří:
-- raw CSV soubory v `.\out\`
-- agregované summary CSV soubory v `.\out\`
-
-## 5) Rozšířené experimenty (OFAT + kombinace)
-
-PowerShell:
-
-```powershell
-.\scripts\run_extended_experiments.ps1 `
-  -NetLogoPath "C:\Program Files\NetLogo 7.0.3\NetLogo_Console.exe"
-```
-
-Linux/WSL:
-
-```bash
-./scripts/run_extended_experiments.sh "/opt/NetLogo-7.0.3"
-```
-
-Ten vytvoří raw CSV i agregované summary CSV pro OFAT/grid experimenty. Agregace
-je seskupená podle měněných parametrů, například `transmission-prob` nebo
-`strategy-mode,high-risk-share,vaccination-rate`.
-
-## 6) Všechny připravené experimenty
-
-PowerShell:
+Windows PowerShell:
 
 ```powershell
 .\scripts\run_all_experiments.ps1 `
@@ -102,21 +37,69 @@ Linux/WSL:
 ./scripts/run_all_experiments.sh "/opt/NetLogo-7.0.3"
 ```
 
-Tento skript postupně spustí baseline i rozšířené experimenty a pro všechny
-vygeneruje odpovídající `*_summary.csv` soubory.
+Tento postup vytvoří kompletní sadu výstupů pro všechny baseline i rozšířené
+experimenty.
 
-## 7) První spuštění v Linux/WSL
+## Samostatné spuštění baseline scénářů
+
+Windows PowerShell:
+
+```powershell
+.\scripts\run_all_baselines.ps1 `
+  -NetLogoPath "C:\Program Files\NetLogo 7.0.3\NetLogo_Console.exe"
+```
+
+Linux/WSL:
+
+```bash
+./scripts/run_all_baselines.sh "/opt/NetLogo-7.0.3"
+```
+
+Výstupem jsou soubory `out/virus*_baseline.csv` a
+`out/virus*_baseline_summary.csv`.
+
+## Samostatné spuštění rozšířených experimentů
+
+Windows PowerShell:
+
+```powershell
+.\scripts\run_extended_experiments.ps1 `
+  -NetLogoPath "C:\Program Files\NetLogo 7.0.3\NetLogo_Console.exe"
+```
+
+Linux/WSL:
+
+```bash
+./scripts/run_extended_experiments.sh "/opt/NetLogo-7.0.3"
+```
+
+Výstupem jsou raw CSV soubory a agregované summary tabulky pro citlivostní
+experimenty:
+
+- `virus1_ofat_transmission`
+- `virus2_capacity_grid`
+- `virus3_resources_grid`
+- `virus4_strategy_grid`
+
+## Ruční agregace
+
+Ruční spuštění `aggregate_results.py` je potřeba pouze při samostatném exportu
+nového BehaviorSpace experimentu mimo připravené hromadné skripty. Příklad:
+
+```powershell
+python .\scripts\aggregate_results.py `
+  --input ".\out\virus4_baseline.csv" `
+  --metrics "m_final_susceptible,m_final_exposed,m_final_infected,m_final_recovered,m_ever_infected,m_ticks,m_deaths,m_final_resources" `
+  --output ".\out\virus4_baseline_summary.csv"
+```
+
+Argument `--group-by` se používá u experimentů s více konfiguracemi parametrů,
+například podle `strategy-mode,high-risk-share,vaccination-rate`.
+
+## Poznámka pro Linux/WSL
+
+Pokud shell skripty nejsou spustitelné, nastaví se oprávnění příkazem:
 
 ```bash
 chmod +x scripts/*.sh
 ```
-
-## 8) Jednopříkazové spuštění přes Makefile (Linux/WSL)
-
-```bash
-make baseline NETLOGO=/opt/NetLogo-7.0.3
-make extended NETLOGO=/opt/NetLogo-7.0.3
-# nebo oboje:
-make all NETLOGO=/opt/NetLogo-7.0.3
-```
-
