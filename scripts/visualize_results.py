@@ -177,6 +177,79 @@ def plot_correlation_heatmap(df, output_dir):
     print(f"Saved: {output_path}")
 
 
+def plot_parameter_sensitivity(df, output_dir):
+    """Create line plots for parameter sensitivity analysis (extended experiments)."""
+    # Filter out baseline results
+    extended = df[df["group"] != "all_runs"].copy()
+    
+    if extended.empty:
+        print("No extended experiment data found")
+        return
+    
+    # Identify grouping columns (parameter columns)
+    param_cols = [col for col in extended.columns if col not in ["model", "group"] and not col.endswith("_mean") and not col.endswith("_std") and not col.endswith("_n") and not col.endswith("_p25") and not col.endswith("_p50") and not col.endswith("_p75")]
+    
+    if not param_cols:
+        print("No parameter columns found in extended data")
+        return
+    
+    # Get key metrics to plot
+    metrics = ["m_ever_infected_mean", "m_deaths_mean", "m_ticks_mean"]
+    available_metrics = [m for m in metrics if m in extended.columns]
+    
+    if not available_metrics:
+        print("No key metrics found in extended data")
+        return
+    
+    # For each model with extended data, create plots
+    for model_name in extended["model"].unique():
+        model_data = extended[extended["model"] == model_name].copy()
+        
+        # Use the first parameter column as x-axis
+        param_col = param_cols[0]
+        
+        # Check if parameter is numeric
+        try:
+            model_data[param_col] = pd.to_numeric(model_data[param_col])
+            is_numeric = True
+        except (ValueError, TypeError):
+            is_numeric = False
+        
+        n_metrics = len(available_metrics)
+        fig, axes = plt.subplots(1, n_metrics, figsize=(5 * n_metrics, 4))
+        if n_metrics == 1:
+            axes = [axes]
+        
+        for i, metric in enumerate(available_metrics):
+            ax = axes[i]
+            
+            if is_numeric:
+                # Sort by parameter for line plot
+                model_data_sorted = model_data.sort_values(param_col)
+                ax.plot(model_data_sorted[param_col], model_data_sorted[metric], 
+                        marker='o', linewidth=2, markersize=6)
+                ax.set_xlabel(param_col.replace("_", " ").title())
+            else:
+                # Bar plot for categorical parameters
+                model_data_sorted = model_data.sort_values(param_col)
+                x_pos = range(len(model_data_sorted))
+                ax.bar(x_pos, model_data_sorted[metric], color="coral")
+                ax.set_xticks(x_pos)
+                ax.set_xticklabels(model_data_sorted[param_col], rotation=45, ha="right")
+                ax.set_xlabel(param_col.replace("_", " ").title())
+            
+            metric_name = metric.replace("_mean", "").replace("m_", "").replace("_", " ").title()
+            ax.set_ylabel(metric_name)
+            ax.set_title(f"{model_name}: {metric_name}")
+            ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        output_path = os.path.join(output_dir, f"{model_name}_parameter_sensitivity.png")
+        plt.savefig(output_path, dpi=150)
+        plt.close()
+        print(f"Saved: {output_path}")
+
+
 def main():
     args = parse_args()
     
@@ -193,6 +266,7 @@ def main():
     plot_model_comparison(df, args.output_dir)
     plot_metric_distributions(df, args.output_dir)
     plot_correlation_heatmap(df, args.output_dir)
+    plot_parameter_sensitivity(df, args.output_dir)
     
     print(f"\nAll figures saved to {args.output_dir}")
 
