@@ -39,6 +39,7 @@ make all NETLOGO="/path/to/NetLogo-7.0.3"
 Target `baseline` spustí výchozí scénáře a rovnou vytvoří `*_baseline_summary.csv`.
 Target `extended` spustí OFAT/grid scénáře a rovnou vytvoří jejich `*_summary.csv`.
 Target `all` spustí obě sady experimentů přes `scripts/run_all_experiments.sh`.
+Target `visualize` vygeneruje grafy z výsledků do `out/figures/`.
 
 Bez předání `NETLOGO` se použije výchozí hodnota z `Makefile` (`/opt/NetLogo-7.0.3`), která na konkrétním systému nemusí existovat.
 
@@ -95,6 +96,12 @@ Spuštění všech experimentů:
 
 ```bash
 docker run --rm -v "$(pwd):/workspace" kiv-vss-sem make all
+```
+
+Generování vizualizací:
+
+```bash
+docker run --rm -v "$(pwd):/workspace" kiv-vss-sem make visualize
 ```
 
 Image deklaruje volume `"/workspace/out"`. Výstupy je vhodné mapovat na host (`-v "$(pwd)/out:/workspace/out"`), případně mapovat celý projekt (`-v "$(pwd):/workspace"`).
