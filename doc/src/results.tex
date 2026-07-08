@@ -1,349 +1,312 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+
+
+\begin{document}
+
+
 \section{Výsledky experimentů}
 
-\subsection{Cíl vyhodnocení}
+Tato kapitola shrnuje výsledky automatizovaných experimentů pro čtyři navazující
+varianty modelu. Cílem není predikovat reálný průběh konkrétní epidemie, ale
+porovnat, jak se chování systému mění při postupném přidávání mechanismů:
+úmrtnosti, kapacitního omezení, spotřebovávaných zdrojů, dočasné imunity,
+vakcinace a strategií alokace.
 
-Cílem této části je vyhodnotit chování čtyř navazujících simulací a ověřit hypotézy formulované v teoretické části. Důraz je kladen na srovnatelnost scénářů, proto jsou napříč simulacemi používány jednotné metriky a stejný postup vyhodnocení.
+Všechny uvedené hodnoty vycházejí z BehaviorSpace běhů agregovaných skriptem
+\texttt{scripts/aggregate\_results.py}. Každá konfigurace byla spuštěna
+desetkrát jako samostatné BehaviorSpace opakování. Uváděné hodnoty jsou průměry
+přes těchto deset opakování; směrodatné odchylky jsou doplněny tam, kde jsou
+důležité pro interpretaci variability.
 
 \subsection{Experimentální metodika}
 
-\textbf{Princip experimentů:}
+Experimenty jsou rozděleny do dvou skupin. První skupinu tvoří baseline scénáře,
+které používají výchozí nastavení jednotlivých modelů a umožňují přímé
+srovnání variant \texttt{virus1} až \texttt{virus4}. Druhou skupinu tvoří
+rozšířené experimenty, které mění vybrané parametry a sledují citlivost modelu
+na konkrétní mechanismy.
+
 \begin{itemize}
-\item pro každou simulaci je definován referenční scénář (výchozí nastavení)
-\item následně je aplikován přístup \textit{one-factor-at-a-time} (OFAT)
-\item pro vybrané dvojice parametrů jsou provedeny doplňkové kombinované scénáře
-\item každá konfigurace je opakována pro více seedů
+\item \textbf{Simulace 1} testuje základní SEIR dynamiku bez úmrtnosti.
+\item \textbf{Simulace 2} přidává úmrtnost a kapacitu systému.
+\item \textbf{Simulace 3} přidává omezené zdroje, dočasnou imunitu a reinfekce.
+\item \textbf{Simulace 4} přidává vakcinaci, rizikové skupiny a strategie alokace.
 \end{itemize}
 
-\textbf{Počet opakování:}
-\begin{itemize}
-\item každá konfigurace: \textbf{10} opakování (\texttt{seed = 1..10})
-\end{itemize}
+V krátkodobých modelech (\texttt{virus1}, \texttt{virus2}) je hlavní metrikou
+doba do stabilizace, tedy počet ticků do okamžiku, kdy v populaci nezůstávají
+infekční ani exponovaní agenti. V dlouhodobých modelech (\texttt{virus3},
+\texttt{virus4}) běh končí až na limitu 8760 ticků. U těchto modelů proto
+finální počet infekčních agentů neznamená jednorázový epidemický vrchol, ale
+indikátor perzistence nákazy na konci sledovaného období.
 
-\textbf{Úrovně parametrů (low/mid/high):}
-\begin{table}[h]
+\subsection{Souhrn baseline scénářů}
+
+Tabulka~\ref{tab:baseline_summary} ukazuje základní srovnání všech čtyř
+modelů. První dva modely se vždy stabilizují. Třetí a čtvrtý model naopak
+zůstávají aktivní až do časového limitu, protože do modelu vstupuje reinfekce
+a dlouhodobá zdrojová dynamika.
+
+\begin{table}[htbp]
 \centering
-\begin{tabular}{l c c c}
+\small
+\begin{tabular}{l r r r r r}
 \hline
-\textbf{Parametr} & \textbf{Low} & \textbf{Mid} & \textbf{High} \\
+\textbf{Model} & \textbf{S} & \textbf{E} & \textbf{I} & \textbf{Úmrtí} & \textbf{Ticků} \\
 \hline
-\texttt{num-people} & 300 & 500 & 800 \\
-\texttt{transmission-prob} & 30 & 60 & 85 \\
-\texttt{incubation-days} & 2 & 5 & 9 \\
-\texttt{mean-illness-duration} & 7 & 14 & 21 \\
-\texttt{standard-speed} & 1 & 2 & 3 \\
-\texttt{fatality-rate} & 0.5 & 1.8 & 4.0 \\
-\texttt{healthcare-capacity} & 80 & 140 & 240 \\
-\texttt{overload-multiplier} & 1.2 & 2.0 & 3.0 \\
-\texttt{resource-stock} & 600 & 1400 & 2600 \\
-\texttt{resource-regeneration} & 2 & 8 & 20 \\
-\texttt{treatment-cost} & 6 & 12 & 24 \\
-\texttt{resource-penalty} & 1.2 & 1.8 & 2.8 \\
-\texttt{vaccination-rate} & 20 & 50 & 80 \\
-\texttt{high-risk-share} & 10 & 20 & 35 \\
+Simulace 1 & 0.0 & 0.0 & 0.0 & 0.0 & 1384.6 \\
+Simulace 2 & 0.0 & 0.0 & 0.0 & 14.8 & 1353.6 \\
+Simulace 3 & 0.0 & 46.2 & 122.4 & 106.4 & 8760.0 \\
+Simulace 4 & 0.0 & 35.9 & 105.2 & 37.8 & 8760.0 \\
 \hline
 \end{tabular}
-\caption{Doporučené úrovně parametrů pro OFAT a kombinované scénáře}
-\label{tab:param_levels}
+\caption{Baseline výsledky. Sloupce S, E a I označují finální počty
+susceptible, exposed a infected agentů.}
+\label{tab:baseline_summary}
 \end{table}
 
-\textbf{Délka běhu:}
-\begin{itemize}
-\item simulace běží do stabilizace nebo do pevného limitu 8760 ticků (dle implementace modelu)
-\end{itemize}
+Výsledky ukazují tři hlavní závěry. Zaprvé, samotný základní SEIR model vede
+při zvolených parametrech k úplnému promoření populace bez zbytkové infekce.
+Zadruhé, zavedení úmrtnosti a kapacity systému nemění zásadně dobu do
+stabilizace, ale přidává měřitelnou ztrátu populace. Zatřetí, zavedení
+reinfekcí a zdrojů mění charakter systému: místo jedné uzavřené vlny vzniká
+dlouhodobý stav s přetrvávající infekcí.
 
-\subsection{Sledované metriky}
+\subsection{Simulace 1: základní SEIR}
 
-V každém scénáři jsou sledovány následující metriky:
-\begin{itemize}
-\item \textbf{Peak infected} -- maximální počet současně infekčních agentů
-\item \textbf{Total deaths} -- celkový počet úmrtí
-\item \textbf{Time to stabilization} -- čas do stabilizace systému
-\item \textbf{Wave count / reinfections} -- počet vln nebo indikátor opětovných nákaz
-\end{itemize}
+Baseline scénář v Simulaci 1 skončil úplným promořením populace: všech 500
+agentů se v průběhu běhu nakazilo a následně přešlo do stavu recovered. Úmrtí
+nejsou v tomto modelu implementována, proto zůstávají nulová. Průměrná doba do
+stabilizace byla 1384.6 ticku se směrodatnou odchylkou 40.6 ticku.
 
-U modelů se zdroji se navíc sleduje:
-\begin{itemize}
-\item \textbf{Resource depletion ratio} -- podíl času s nízkou nebo nulovou zásobou zdrojů
-\item \textbf{Over-capacity load} -- přetížení kapacity systému v čase
-\end{itemize}
+Citlivostní experiment měnil pravděpodobnost přenosu
+\texttt{transmission-prob}. Výsledky jsou v Tabulce~\ref{tab:s1_transmission}.
+Vyšší pravděpodobnost přenosu zkracuje dobu do stabilizace, protože se infekce
+rychleji rozšíří celou populací a dříve vyčerpá množinu vnímavých agentů.
 
-\subsection{Referenční scénáře}
-
-Tabulka~\ref{tab:baseline} uvádí výchozí konfigurace použité jako baseline.
-
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\begin{tabular}{l l}
+\small
+\begin{tabular}{r r r r}
 \hline
-\textbf{Model} & \textbf{Referenční konfigurace} \\
+\textbf{\texttt{transmission-prob}} & \textbf{Ticků} & \textbf{Std. odch.} & \textbf{Finální I} \\
 \hline
-Simulace 1 & výchozí hodnoty sliderů \\
-Simulace 2 & výchozí hodnoty sliderů \\
-Simulace 3 & výchozí hodnoty sliderů \\
-Simulace 4 & výchozí hodnoty sliderů \\
+30 & 1622.9 & 89.7 & 0.0 \\
+60 & 1372.8 & 57.5 & 0.0 \\
+85 & 1267.5 & 35.3 & 0.0 \\
 \hline
 \end{tabular}
-\caption{Referenční scénáře (baseline)}
-\label{tab:baseline}
+\caption{Vliv pravděpodobnosti přenosu v Simulaci 1.}
+\label{tab:s1_transmission}
 \end{table}
 
-\subsection{Minimální sada scénářů}
+Interpretace je důležitá: vyšší přenos zde nevede k vyššímu konečnému počtu
+nakažených, protože se při všech třech konfiguracích nakazí celá populace.
+Rozdíl je v rychlosti průběhu, nikoli ve finálním rozsahu epidemie.
 
-Aby byl experiment zvládnutelný, ale zároveň obhajitelný, je doporučena následující minimální sada:
-\begin{itemize}
-\item baseline pro každý model
-\item OFAT: 4 klíčové parametry na model, každý ve 3 úrovních (low/mid/high)
-\item 2 kombinované scénáře na model (interakce parametrů)
-\item 10 seedů na každou konfiguraci
-\end{itemize}
+\subsection{Simulace 2: úmrtnost a kapacita systému}
 
-Tím vznikne přibližně 15 konfigurací na model, tj. cca 150 běhů na model a 600 běhů celkem.
+Simulace 2 zachovává základní epidemickou dynamiku z prvního modelu, ale přidává
+úmrtnost a kapacitní omezení. Baseline scénář opět končí bez aktivní infekce,
+ale průměrně vzniká 14.8 úmrtí se směrodatnou odchylkou 4.7. Průměrná doba do
+stabilizace je 1353.6 ticku, tedy velmi blízko Simulaci 1.
 
-\subsection{Výsledky Simulace 1}
+Rozhodující rozdíl je v citlivosti na kombinaci kapacity systému a multiplikátoru
+přetížení. Tabulka~\ref{tab:s2_capacity} ukazuje, že nejhorší výsledek vzniká
+při nízké kapacitě a vysokém multiplikátoru přetížení. Naopak vysoká kapacita
+tlumí dopad i při nepříznivém multiplikátoru.
 
-\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
-
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\begin{tabular}{l c}
+\small
+\begin{tabular}{r r r r}
 \hline
-\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\textbf{Kapacita} & \textbf{Přetížení} & \textbf{Úmrtí} & \textbf{Std. odch.} \\
 \hline
-Final susceptible & 0.0 \\
-Final exposed & 0.0 \\
-Final infected & 0.0 \\
-Final recovered & 500.0 \\
-Ever infected & 500.0 \\
-Deaths & 0.0 \\
-Time to stabilization (ticks) & 1327.4 \\
+80 & 1.2 & 8.7 & 2.3 \\
+80 & 3.0 & 23.2 & 3.6 \\
+240 & 1.2 & 10.0 & 2.0 \\
+240 & 3.0 & 17.7 & 3.6 \\
 \hline
 \end{tabular}
-\caption{Baseline výsledky Simulace 1}
-\label{tab:s1_baseline}
-\end{table}
-
-\subsubsection{OFAT experimenty}
-
-V Simulaci 1 byly měněny parametry:
-\begin{itemize}
-\item \texttt{transmission-prob}
-\item \texttt{incubation-days}
-\item \texttt{standard-speed}
-\item \texttt{num-people}
-\end{itemize}
-
-\begin{table}[h]
-\centering
-\begin{tabular}{l c c c c}
-\hline
-\textbf{Parametr} & \textbf{Úroveň} & \textbf{Peak infected} & \textbf{Time to stab.} & \textbf{Poznámka} \\
-\hline
-\texttt{transmission-prob} & low (30) & 0.0 (final I) & 1596.8 & nejpomalejší do stabilizace \\
-\texttt{transmission-prob} & mid (60) & 0.0 (final I) & 1369.5 & referenční průběh \\
-\texttt{transmission-prob} & high (85) & 0.0 (final I) & 1285.7 & nejrychlejší do stabilizace \\
-\hline
-\end{tabular}
-\caption{Ukázka OFAT výsledků pro Simulaci 1}
-\label{tab:s1_ofat}
-\end{table}
-
-\textbf{Interpretace:}  
-Baseline konfigurace vede k úplnému promoření populace bez úmrtí; systém se stabilizuje přibližně po 1327 tickech. OFAT potvrzuje, že s vyšším \texttt{transmission-prob} se epidemie uzavírá rychleji (kratší doba do stabilizace).
-
-\subsection{Výsledky Simulace 2}
-
-\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
-
-\begin{table}[h]
-\centering
-\begin{tabular}{l c}
-\hline
-\textbf{Metrika} & \textbf{Hodnota (mean)} \\
-\hline
-Final susceptible & 0.0 \\
-Final exposed & 0.0 \\
-Final infected & 0.0 \\
-Final recovered & 484.1 \\
-Ever infected & 500.0 \\
-Deaths & 15.9 \\
-Time to stabilization (ticks) & 1332.2 \\
-\hline
-\end{tabular}
-\caption{Baseline výsledky Simulace 2}
-\label{tab:s2_baseline}
-\end{table}
-
-\subsubsection{Vliv kapacity systému}
-
-Zde je klíčový vztah mezi \texttt{healthcare-capacity}, \texttt{overload-multiplier} a \texttt{fatality-rate}.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{c c c c}
-\hline
-\textbf{Capacity} & \textbf{Overload mult.} & \textbf{Total deaths} & \textbf{Over-capacity load} \\
-\hline
-low (80) & low (1.2) & 11.8 & N/A \\
-low (80) & high (3.0) & 26.6 & N/A \\
-high (240) & low (1.2) & 10.7 & N/A \\
-high (240) & high (3.0) & 16.9 & N/A \\
-\hline
-\end{tabular}
-\caption{Citlivost Simulace 2 na kapacitu a přetížení}
+\caption{Vliv kapacity systému a multiplikátoru přetížení v Simulaci 2.}
 \label{tab:s2_capacity}
 \end{table}
 
-\textbf{Interpretace:}  
-Při výchozím nastavení vzniká nenulová úmrtnost (průměrně 15.9 úmrtí), zatímco v Simulaci 1 byla nulová. Grid scénář potvrzuje, že nejhorší kombinace je nízká kapacita + vysoký overload multiplikátor.
+Při nízké kapacitě zvýšení multiplikátoru z 1.2 na 3.0 zvýší průměrný počet
+úmrtí z 8.7 na 23.2. Při vysoké kapacitě je nárůst mírnější, z 10.0 na 17.7.
+To podporuje očekávání, že kapacita systému nepůsobí pouze jako samostatný
+parametr, ale mění dopad ostatních rizikových faktorů.
 
-\subsection{Výsledky Simulace 3}
+\subsection{Simulace 3: zdroje a reinfekce}
 
-\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
+Simulace 3 mění chování modelu nejvýrazněji. V baseline scénáři se nakazí celá
+populace, ale systém se do konce běhu nestabilizuje. Po 8760 ticích zůstává
+v průměru 46.2 exponovaných a 122.4 infekčních agentů. Průměrný počet úmrtí je
+106.4, tedy výrazně vyšší než v Simulaci 2.
 
-\begin{table}[h]
+Příčinou je kombinace dočasné imunity, reinfekcí a zdrojové zátěže. Model již
+nepopisuje jednu epidemickou vlnu, ale dlouhodobý proces, ve kterém se část
+populace vrací do rizika nákazy a dostupné zdroje ovlivňují závažnost průběhu.
+
+\begin{table}[htbp]
 \centering
-\begin{tabular}{l c}
+\small
+\begin{tabular}{r r r r r}
 \hline
-\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\textbf{Zásoba} & \textbf{Obnova} & \textbf{Cena léčby} & \textbf{Úmrtí} & \textbf{Finální zdroje} \\
 \hline
-Final susceptible & 0.0 \\
-Final exposed & 42.8 \\
-Final infected & 124.6 \\
-Final recovered & 218.6 \\
-Ever infected & 500.0 \\
-Deaths & 114.0 \\
-Final resources & 1396.8 \\
-Runtime (ticks) & 8760.0 \\
+600 & 2 & 6 & 114.7 & 44.4 \\
+600 & 2 & 24 & 141.5 & 19.2 \\
+600 & 20 & 6 & 107.4 & 598.2 \\
+600 & 20 & 24 & 110.3 & 592.8 \\
+2600 & 2 & 6 & 113.8 & 26.2 \\
+2600 & 2 & 24 & 141.3 & 11.2 \\
+2600 & 20 & 6 & 109.1 & 2597.0 \\
+2600 & 20 & 24 & 107.0 & 2582.0 \\
 \hline
 \end{tabular}
-\caption{Baseline výsledky Simulace 3}
-\label{tab:s3_baseline}
-\end{table}
-
-\subsubsection{Vliv omezených zdrojů}
-
-Byly testovány parametry \texttt{resource-stock}, \texttt{resource-regeneration}, \texttt{treatment-cost} a \texttt{resource-penalty}.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{c c c c c}
-\hline
-\textbf{Stock} & \textbf{Regen} & \textbf{Cost} & \textbf{Deaths} & \textbf{Resource depletion} \\
-\hline
-low (600) & low (2) & high (24) & 145.3 & vysoká (final res. 17.6) \\
-low (600) & high (20) & high (24) & 109.0 & nízká až střední (final res. 574.8) \\
-high (2600) & low (2) & low (6) & 114.0 & střední (final res. 15.6) \\
-high (2600) & high (20) & low (6) & 109.0 & velmi nízká (final res. 2599.4) \\
-\hline
-\end{tabular}
-\caption{Vliv zdrojových parametrů v Simulaci 3}
+\caption{Vliv zásoby, obnovy a ceny léčby v Simulaci 3.}
 \label{tab:s3_resources}
 \end{table}
 
-\textbf{Interpretace:}  
-Model v baseline nedosáhne stabilizace před limitem 8760 ticků a vykazuje perzistentní infekci (nenulové E i I na konci běhu), což je konzistentní s chováním modelu s reinfekcí a omezenými zdroji.
+Tabulka~\ref{tab:s3_resources} ukazuje, že nejrizikovější nejsou pouze nízké
+počáteční zdroje, ale zejména kombinace pomalé obnovy a vysoké ceny léčby.
+Konfigurace se zásobou 600, obnovou 2 a cenou léčby 24 vede k 141.5 úmrtím.
+Podobně nepříznivě dopadá i vysoká počáteční zásoba 2600, pokud je obnova pomalá
+a léčba drahá. To naznačuje, že samotná počáteční zásoba nestačí; pro dlouhý
+běh je klíčová průběžná regenerace zdrojů.
 
-\subsection{Výsledky Simulace 4}
+\subsection{Simulace 4: strategie, rizikové skupiny a vakcinace}
 
-\subsubsection{Baseline výsledek (\texttt{baseline\_auto}, 10 běhů)}
+Simulace 4 přidává heterogenitu populace, vakcinaci a strategie alokace zdrojů.
+Baseline scénář stále nedosahuje stabilizace do limitu 8760 ticků, ale proti
+Simulaci 3 výrazně snižuje úmrtnost: z 106.4 na 37.8 úmrtí. Finální počet
+infekčních agentů zůstává také nižší, 105.2 oproti 122.4.
 
-\begin{table}[h]
+Výsledky strategického gridu jsou shrnuty v Tabulce~\ref{tab:s4_strategy}.
+Nejsilnější efekt má vakcinace. Při nízké vakcinaci 20~\% se počet úmrtí
+pohybuje přibližně mezi 74 a 104 podle strategie. Při vysoké vakcinaci 80~\%
+klesá typicky pod 22 úmrtí.
+
+\begin{table}[htbp]
 \centering
-\begin{tabular}{l c}
+\small
+\begin{tabular}{r r r r r}
 \hline
-\textbf{Metrika} & \textbf{Hodnota (mean)} \\
+\textbf{Strategie} & \textbf{Riziková skupina} & \textbf{Vakcinace} & \textbf{Úmrtí} & \textbf{Finální I} \\
 \hline
-Final susceptible & 25.0 \\
-Final exposed & 33.1 \\
-Final infected & 98.2 \\
-Final recovered & 284.6 \\
-Ever infected & 475.0 \\
-Deaths & 34.2 \\
-Final resources & 1394.8 \\
-Runtime (ticks) & 8760.0 \\
+0 & 10 & 20 & 76.9 & 123.7 \\
+0 & 10 & 80 & 13.0 & 80.2 \\
+0 & 35 & 20 & 74.6 & 125.0 \\
+0 & 35 & 80 & 15.4 & 78.8 \\
+1 & 10 & 20 & 99.0 & 107.9 \\
+1 & 10 & 80 & 20.8 & 85.9 \\
+1 & 35 & 20 & 94.1 & 110.3 \\
+1 & 35 & 80 & 19.9 & 71.1 \\
+2 & 10 & 20 & 77.8 & 118.2 \\
+2 & 10 & 80 & 16.7 & 81.6 \\
+2 & 35 & 20 & 74.5 & 124.1 \\
+2 & 35 & 80 & 15.6 & 78.6 \\
 \hline
 \end{tabular}
-\caption{Baseline výsledky Simulace 4}
-\label{tab:s4_baseline}
-\end{table}
-
-\subsubsection{Porovnání strategií}
-
-Strategie jsou reprezentovány parametrem \texttt{strategy-mode}. Dále byl sledován vliv \texttt{high-risk-share} a \texttt{vaccination-rate}.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{c c c c c}
-\hline
-\textbf{Strategy mode} & \textbf{High-risk share} & \textbf{Vacc. rate} & \textbf{Deaths} & \textbf{Peak infected} \\
-\hline
-0 & low (10) & low (20) & 74.7 & 124.1 (final I) \\
-1 & low (10) & low (20) & 103.6 & 100.5 (final I) \\
-2 & low (10) & low (20) & 76.4 & 119.0 (final I) \\
-0 & high (35) & high (80) & 14.5 & 80.1 (final I) \\
-1 & high (35) & high (80) & 21.4 & 78.6 (final I) \\
-2 & high (35) & high (80) & 14.3 & 78.6 (final I) \\
-\hline
-\end{tabular}
-\caption{Porovnání strategií alokace v Simulaci 4}
+\caption{Porovnání strategií, podílu rizikové skupiny a vakcinace v Simulaci 4.}
 \label{tab:s4_strategy}
 \end{table}
 
-\textbf{Interpretace:}  
-V baseline konfiguraci je celkový podíl nakažených nižší než v Simulaci 3 (ever infected 475 vs. 500), současně výrazně klesá i úmrtnost (34.2 vs. 114.0), což naznačuje přínos kombinace očkování a strategie alokace zdrojů.
+Strategie 1 má v těchto experimentech nejvyšší úmrtnost, především při nízké
+vakcinaci. Například při 10~\% rizikové skupiny a 20~\% vakcinaci vede k 99.0
+úmrtím, zatímco strategie 0 ve stejné konfiguraci vede k 76.9 úmrtím a strategie
+2 k 77.8 úmrtím. Strategie 0 a 2 jsou podle této metriky robustnější. Při vysoké
+vakcinaci se rozdíly mezi strategiemi zmenšují, protože vakcinace dominuje nad
+efektem alokačního pravidla.
 
-\subsection{Srovnání modelů}
+\subsection{Porovnání dopadu jednotlivých rozšíření}
 
-\begin{table}[h]
-\centering
-\begin{tabular}{l c c c c}
-\hline
-\textbf{Model} & \textbf{Peak infected} & \textbf{Deaths} & \textbf{Time to stab.} & \textbf{Poznámka} \\
-\hline
-Simulace 1 & 0.0 & 0.0 & 1327.4 & baseline \\
-Simulace 2 & 0.0 & 15.9 & 1332.2 & kapacita systému \\
-Simulace 3 & 124.6 (final I) & 114.0 & 8760.0 (limit) & zdroje + reinfekce \\
-Simulace 4 & 98.2 (final I) & 34.2 & 8760.0 (limit) & strategie + očkování \\
-\hline
-\end{tabular}
-\caption{Souhrnné porovnání všech modelů}
-\label{tab:all_models}
-\end{table}
+Postupné rozšiřování modelu ukazuje, že jednotlivé mechanismy nemění pouze
+absolutní hodnoty metrik, ale i povahu sledovaného systému.
+
+\begin{itemize}
+\item Přechod ze Simulace 1 na Simulaci 2 přidává úmrtnost, ale zachovává
+jednovlnný průběh končící stabilizací.
+\item Přechod ze Simulace 2 na Simulaci 3 zavádí dlouhodobou dynamiku, ve které
+nákaza přetrvává až do konce běhu.
+\item Přechod ze Simulace 3 na Simulaci 4 snižuje úmrtnost i finální počet
+infekčních, protože do systému vstupuje vakcinace a řízená alokace zdrojů.
+\item Výsledky strategie ukazují, že vysoká vakcinace je v tomto nastavení
+silnější stabilizační faktor než samotná volba alokační strategie.
+\end{itemize}
+
+Z praktického pohledu je nejdůležitější rozdíl mezi jednorázovou stabilizací
+a dlouhodobou perzistencí. Pokud model neobsahuje reinfekce, stačí sledovat
+rychlost a finální rozsah epidemie. Jakmile jsou reinfekce povoleny, je nutné
+sledovat i stav systému v dlouhém horizontu, protože nulový počet vnímavých
+agentů neznamená konec epidemické dynamiky.
 
 \subsection{Vyhodnocení hypotéz}
 
-\textbf{H1:} Zvýšení hustoty populace vede k nelineárnímu růstu rychlosti šíření.  
-Průběžně: \textbf{čeká na OFAT scénáře} (zatím vyhodnocen pouze baseline).
+\textbf{H1: Vyšší intenzita přenosu zrychluje průběh epidemie.}
+Tato hypotéza je potvrzena pro Simulaci 1. Při zvýšení
+\texttt{transmission-prob} z 30 na 85 klesla průměrná doba do stabilizace
+z 1622.9 na 1267.5 ticku. V tomto nastavení se ale nezměnil finální rozsah
+nákazy, protože se ve všech testovaných variantách nakazila celá populace.
 
-\textbf{H2:} Omezené zdroje zpomalují šíření, ale mohou způsobit lokální kolapsy.  
-Průběžně: \textbf{částečně potvrzeno} baseline porovnáním Simulace 2 vs. 3 (vyšší perzistence infekce a výrazný nárůst úmrtnosti při zdrojové dynamice).
+\textbf{H2: Omezená kapacita a zdroje zvyšují úmrtnost při nepříznivých
+konfiguracích.} Hypotéza je potvrzena. V Simulaci 2 způsobila kombinace nízké
+kapacity a vysokého multiplikátoru přetížení 23.2 úmrtí, zatímco vysoká kapacita
+a nízké přetížení vedly k 10.0 úmrtím. V Simulaci 3 se ukázalo, že pomalá obnova
+zdrojů a vysoká cena léčby mohou zvýšit úmrtnost až na 141.5 úmrtí.
 
-\textbf{H3:} Heterogenita agentů stabilizuje systém.  
-Průběžně: \textbf{částečně potvrzeno} baseline porovnáním Simulace 3 vs. 4 (nižší úmrtnost a nižší celková infekce při heterogenních strategiích).
+\textbf{H3: Strategie a vakcinace mohou stabilizovat systém a snížit ztráty.}
+Hypotéza je částečně potvrzena. Simulace 4 proti Simulaci 3 snižuje úmrtnost
+z 106.4 na 37.8 v baseline scénáři. V dlouhodobém horizontu ale infekce stále
+nezaniká a běh končí až časovým limitem. Vakcinace výrazně snižuje úmrtnost,
+zatímco rozdíly mezi strategiemi jsou menší a závisí na konkrétní konfiguraci.
+
+\subsection{Omezení výsledků}
+
+Výsledky je nutné číst jako výstup kontrolované replikační studie, nikoli jako
+kalibrovanou epidemiologickou predikci. Model používá zjednodušené kontakty,
+syntetickou populaci a parametry zvolené pro porovnatelnost experimentů. U
+dlouhodobých modelů navíc dostupné agregace neobsahují skutečný peak infekčních
+v čase, ale pouze finální hodnoty po 8760 ticích. Pro detailnější analýzu vln by
+bylo vhodné exportovat časové řady a dopočítat maximální zatížení systému,
+počet vln a délku období s vyčerpanými zdroji.
+
+Dalším omezením je počet opakování. Deset opakování na konfiguraci stačí pro
+základní srovnání trendů, ale pro přesnější kvantifikaci nejistoty by bylo
+vhodné počet opakování zvýšit a doplnit intervaly spolehlivosti. V současné
+verzi experimentů navíc nejsou explicitně fixované random seedy, takže přesné
+číselné hodnoty se mohou mezi opakovanými spuštěními mírně lišit.
 
 \subsection{Shrnutí}
 
-TODO: 1--2 odstavce se závěrečnou interpretací:
-\begin{itemize}
-\item hlavní zjištění
-\item praktický význam výsledků
-\item omezení experimentu
-\item návrhy pro další rozšíření
-\end{itemize}
+Experimenty ukazují, že postupné přidávání mechanismů výrazně mění výsledné
+chování agent-based modelu. Základní SEIR varianta vede k uzavřené epidemické
+vlně bez úmrtí. Kapacitní omezení přidává úmrtnost, ale systém se stále
+stabilizuje. Zdroje a reinfekce posouvají model do režimu dlouhodobé perzistence
+nákazy, ve kterém je klíčová nejen počáteční zásoba, ale hlavně schopnost zdroje
+průběžně obnovovat. Strategie a vakcinace následně dokážou výrazně snížit
+úmrtnost, přičemž nejsilnějším faktorem je v provedených experimentech vysoká
+vakcinace.
 
-\subsection{Automatizace a replikovatelnost}
+Z hlediska cíle práce je podstatné, že modely tvoří srovnatelnou řadu. Každé
+rozšíření přidává nový mechanismus, jehož dopad lze pozorovat v metrikách.
+Výsledky tím podporují použití agent-based simulace jako vysvětlujícího nástroje
+pro analýzu omezených zdrojů a jednoduchých intervenčních strategií.
 
-Pro plně replikovatelný běh je doporučeno využít \textbf{BehaviorSpace} v headless režimu:
-\begin{itemize}
-\item definovat experimenty v NetLogo (pojmenované scénáře)
-\item spouštět je skriptem s fixním počtem opakování a seedů
-\item exportovat výsledky do CSV
-\item agregovat průměr, směrodatnou odchylku a percentily
-\end{itemize}
+\subsection{Replikovatelnost}
 
-Praktický postup a skripty jsou uvedeny v souborech:
-\begin{itemize}
-\item \texttt{automation.md}
-\item \texttt{run\_behaviorspace.ps1}
-\item \texttt{aggregate\_results.py}
-\end{itemize}
+Postup spuštění a agregace je reprodukovatelný přes připravené skripty pro
+BehaviorSpace.
+Baseline scénáře lze spustit skriptem \texttt{scripts/run\_all\_baselines.ps1}
+nebo \texttt{scripts/run\_all\_baselines.sh}. Rozšířené experimenty lze spustit
+skriptem \texttt{scripts/run\_extended\_experiments.ps1} nebo
+\texttt{scripts/run\_extended\_experiments.sh}. Agregace výsledků probíhá
+skriptem \texttt{scripts/aggregate\_results.py}, který vytváří soubory
+\texttt{out/*\_summary.csv} použité v této kapitole.
+
+
+\end{document}

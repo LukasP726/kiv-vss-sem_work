@@ -1,122 +1,214 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xurl}
+\usepackage[T1]{fontenc}
+\usepackage[czech]{babel}
+
+\title{Implementace simulací}
+\author{Lukáš Plachý}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
 \section{Implementace simulací}
 
-Tato část popisuje praktickou implementaci čtyř navazujících modelů v prostředí NetLogo. Modely jsou navrženy tak, aby měly podobnou strukturu rozhraní, postupně rostoucí složitost a aby umožňovaly srovnatelné experimenty.
+Tato část popisuje praktickou implementaci čtyř navazujících modelů v prostředí
+NetLogo. Všechny modely sdílejí stejnou základní strukturu: inicializaci
+populace v proceduře \texttt{setup}, jeden simulační krok v proceduře
+\texttt{go}, lokální přenos infekce v proceduře \texttt{infect}, změny stavů
+v proceduře \texttt{change-state} a náhodný pohyb agentů v proceduře
+\texttt{move}. Díky tomu lze výsledky jednotlivých variant porovnávat bez toho,
+aby se současně měnila celá architektura modelu.
 
-\subsection{Simulace 1: Základní SEIR}
+Modely jsou uloženy v souborech \path{examples/virus1.nlogox} až
+\path{examples/virus4.nlogox}. Každý další model zachovává podstatnou část
+předchozí verze a přidává jeden typ mechanismu navíc. Tato návaznost je pro
+práci důležitá: rozdíly ve výsledcích lze interpretovat jako dopad konkrétního
+rozšíření, nikoli jako důsledek kompletně jiné implementace.
 
-\textbf{Účel:}
+\subsection{Společný rámec modelů}
+
+Populace je reprezentována agenty typu \texttt{turtle}. Každý agent se pohybuje
+v diskrétním prostoru NetLogo a interaguje pouze s agenty na stejném políčku
+(\texttt{turtles-here}). Přenos infekce je tedy lokální a závisí na prostorovém
+promíchání populace.
+
+Základní zdravotní stavy jsou kódovány barvou agenta:
 \begin{itemize}
-\item ověřit základní mechaniku šíření v populaci
-\item získat referenční průběh bez dalších zásahů
+\item \textbf{bílá} -- vnímavý agent (\textit{susceptible}),
+\item \textbf{žlutá} -- exponovaný agent v inkubační době,
+\item \textbf{červená} -- infekční agent,
+\item \textbf{zelená} -- zotavený agent,
+\item \textbf{modrá} -- očkovaný agent v Simulaci 4.
 \end{itemize}
 
-\textbf{Hlavní parametry:}
+Každý agent nese interní čítače a příznaky, které řídí přechody mezi stavy:
+\texttt{hours} počítá dobu strávenou v aktuálním stavu, \texttt{speed} určuje
+rychlost pohybu, \texttt{illness-duration} uchovává délku nemoci,
+\texttt{incubation-hours} délku inkubace a \texttt{infectious?} rozlišuje, zda
+agent skutečně šíří infekci. Ve třetí a čtvrté simulaci se přidává
+\texttt{immunity-hours}; ve čtvrté simulaci navíc \texttt{vaccinated?} a
+\texttt{high-risk?}.
+
+Jeden tick odpovídá jedné hodině modelového času. Krátkodobé modely
+\texttt{virus1} a \texttt{virus2} končí ve chvíli, kdy v populaci nezůstává žádný
+žlutý ani červený agent, případně nejpozději po 8760 ticích. Dlouhodobé modely
+\texttt{virus3} a \texttt{virus4} běží do pevného limitu 8760 ticků, protože
+umožňují reinfekce a infekce v nich nemusí přirozeně vymizet.
+
+\subsection{Simulace 1: základní SEIR}
+
+První model implementuje základní agent-based variantu SEIR bez úmrtnosti,
+kapacitního omezení a zdrojů. V proceduře \texttt{setup} se vytvoří
+\texttt{num-people} agentů, všichni začínají jako vnímaví. Náhodně vybraná
+skupina \texttt{init-infected} agentů je nastavena do exponovaného stavu.
+
+Přenos probíhá v proceduře \texttt{infect}. Infekční agenti, tedy červení agenti
+s příznakem \texttt{infectious?}, zkoušejí nakazit ostatní vnímavé agenty na
+stejném políčku. Pravděpodobnost přenosu je dána parametrem
+\texttt{transmission-prob}. Nově nakažený agent přechází do žlutého stavu,
+dostává délku inkubace \path{incubation-days * 24} a délku nemoci náhodně
+vzorkovanou z Poissonova rozdělení kolem \path{mean-illness-duration}.
+
+Přechody stavů zajišťuje procedura \texttt{change-state}. Po uplynutí
+inkubační doby se žlutý agent mění na červeného a začíná být infekční. Po
+uplynutí doby nemoci se červený agent mění na zeleného a přestává infekci šířit.
+Protože model neobsahuje úmrtnost ani ztrátu imunity, zotavení agenti v této
+variantě zůstávají v zeleném stavu až do konce simulace.
+
+\subsection{Simulace 2: úmrtnost a kapacita systému}
+
+Druhá simulace rozšiřuje základní SEIR model o globální proměnnou
+\texttt{deaths} a o kapacitní omezení reprezentované parametrem
+\texttt{healthcare-capacity}. Struktura pohybu, infekce a inkubace zůstává
+stejná jako v Simulaci 1.
+
+Rozdíl nastává při ukončení nemoci. Když červený agent dosáhne konce své
+\texttt{illness-duration}, model vypočítá efektivní pravděpodobnost úmrtí.
+Základní hodnota je \texttt{fatality-rate}. Pokud je počet současně infekčních
+agentů vyšší než \texttt{healthcare-capacity}, pravděpodobnost úmrtí se násobí
+\texttt{overload-multiplier}. Výsledná hodnota je omezena horní hranicí
+100~\%.
+
+Pokud agent zemře, zvýší se \texttt{deaths} a agent je odstraněn příkazem
+\texttt{die}. Pokud nezemře, přechází do zeleného stavu. Tato implementace
+umožňuje sledovat, zda se při stejné epidemické dynamice projeví přetížení
+systému zvýšenou úmrtností.
+
+\subsection{Simulace 3: zdroje, dočasná imunita a reinfekce}
+
+Třetí simulace přidává explicitní zdrojovou vrstvu a dlouhodobou dynamiku.
+Globální proměnná \texttt{current-resources} reprezentuje aktuální dostupnou
+zásobu zdrojů. Při inicializaci je nastavena na \path{resource-stock} a v
+každém kroku se navyšuje o \texttt{resource-regeneration}, nejvýše však zpět na
+hodnotu \path{resource-stock}.
+
+Při dokončení nemoci se model pokusí agentovi přidělit léčbu. Pokud je
+\texttt{current-resources} alespoň \texttt{treatment-cost}, zdroje se sníží
+o cenu léčby a agent je označen jako léčený. Pokud zdroje nestačí, agent léčený
+není a jeho efektivní úmrtnost se násobí parametrem
+\texttt{resource-penalty}. Nadále zůstává aktivní i kapacitní mechanismus ze
+Simulace 2, takže se mohou kombinovat dva typy zátěže: přetížení systému a
+nedostatek zdrojů.
+
+Třetí simulace zároveň zavádí dočasnou imunitu. Zotavení agenti zůstávají
+zelení, ale v proceduře \texttt{move} se jim zvyšuje \texttt{immunity-hours}.
+Při kontaktu s infekčním agentem mohou být znovu nakaženi. Pravděpodobnost
+reinfekce roste s časem od zotavení až do horizontu 180 dní. Tím model přestává
+popisovat jednu uzavřenou epidemickou vlnu a umožňuje vznik dlouhodobé
+perzistence infekce.
+
+\subsection{Simulace 4: vakcinace, rizikové skupiny a strategie}
+
+Čtvrtá simulace přidává heterogenitu agentů a jednoduché intervenční strategie.
+Každý agent může mít příznak \texttt{vaccinated?} a \texttt{high-risk?}. Podíl
+očkovaných určuje parametr \texttt{vaccination-rate}; podíl rizikových agentů
+určuje \path{high-risk-share}. Očkovaní agenti jsou v rozhraní značeni modře.
+
+Vakcinace ovlivňuje dvě části modelu. Při přenosu infekce má očkovaný agent
+sníženou pravděpodobnost nákazy na jednu osminu původní hodnoty. Pokud se
+očkovaný agent přesto nakazí, má při rozhodování o úmrtí sníženou základní
+pravděpodobnost úmrtí na jednu pětadvacetinu. Tím vakcinace působí jak proti
+šíření, tak proti závažnosti průběhu.
+
+Parametr \texttt{strategy-mode} určuje, kdo může získat léčbu, pokud jsou
+dostupné zdroje:
 \begin{itemize}
-\item \texttt{num-people} -- velikost populace
-\item \texttt{init-infected} -- počet počátečně nakažených
-\item \texttt{transmission-prob} -- pravděpodobnost přenosu při kontaktu
-\item \texttt{incubation-days} -- délka inkubace
-\item \texttt{mean-illness-duration} -- průměrná doba nemoci
-\item \texttt{standard-speed} -- rychlost pohybu agentů
+\item \texttt{0} -- léčba je přidělena každému agentovi, pokud je dostatek zdrojů,
+\item \texttt{1} -- léčba je přidělena pouze rizikovým agentům,
+\item \texttt{2} -- léčba je přidělena pouze neočkovaným agentům.
 \end{itemize}
 
-\textbf{Očekávané chování při změnách parametrů:}
+Tento mechanismus je záměrně jednoduchý. Neřeší fronty ani optimalizaci v čase,
+ale umožňuje porovnat, jak různé prioritizační pravidlo mění celkový počet
+úmrtí a finální počet infekčních agentů při stejné základní epidemické dynamice.
+
+\subsection{Metriky a reportery}
+
+Všechny modely exportují stejnou sadu reporterů s prefixem \texttt{m\_}. Díky
+tomu lze pro baseline scénáře používat jednotný agregační skript a stejnou
+strukturu výstupních tabulek.
+
 \begin{itemize}
-\item vyšší \texttt{transmission-prob} urychluje nástup epidemické vlny
-\item vyšší \texttt{num-people} zvyšuje počet kontaktů a absolutní velikost vlny
-\item vyšší \texttt{incubation-days} oddaluje nástup infekční fáze
-\item vyšší \texttt{standard-speed} zvyšuje promíchání populace a kontaktů
+\item \texttt{m\_final\_susceptible} -- počet bílých agentů na konci běhu,
+\item \texttt{m\_final\_exposed} -- počet žlutých agentů na konci běhu,
+\item \texttt{m\_final\_infected} -- počet červených agentů na konci běhu,
+\item \texttt{m\_final\_recovered} -- počet zelených agentů na konci běhu,
+\item \texttt{m\_ever\_infected} -- odhad počtu agentů, kteří nebyli na konci vnímaví,
+\item \texttt{m\_ticks} -- délka běhu v ticích,
+\item \texttt{m\_deaths} -- počet úmrtí,
+\item \texttt{m\_final\_resources} -- finální zásoba zdrojů, případně \texttt{-1}
+u modelů bez zdrojů.
 \end{itemize}
 
-\subsection{Simulace 2: SEIR + úmrtnost + kapacita systému}
+Je třeba rozlišovat mezi finální hodnotou a časovým maximem. Aktuální
+BehaviorSpace exporty ukládají finální metriky, nikoli celý průběh časových
+řad. Proto se v kapitole výsledků u dlouhodobých modelů interpretuje
+\path{m_final_infected} jako indikátor přetrvávající infekce na konci běhu,
+ne jako epidemický peak.
 
-\textbf{Účel:}
+\subsection{Automatizace experimentů}
+
+Experimenty jsou definovány přímo v souborech \texttt{.nlogox} pomocí
+BehaviorSpace. Každý model obsahuje baseline experiment \texttt{baseline\_auto}
+s deseti opakováními. Nad rámec baseline jsou definovány rozšířené experimenty:
 \begin{itemize}
-\item rozšířit model o závažné průběhy (úmrtí)
-\item zavést první explicitní omezený zdroj (kapacita systému)
+\item \texttt{ofat\_transmission\_auto} v Simulaci 1,
+\item \texttt{capacity\_overload\_grid\_auto} v Simulaci 2,
+\item \texttt{resources\_grid\_auto} v Simulaci 3,
+\item \texttt{strategy\_grid\_auto} v Simulaci 4.
 \end{itemize}
 
-\textbf{Nové prvky oproti Simulaci 1:}
-\begin{itemize}
-\item \texttt{fatality-rate} -- základní pravděpodobnost úmrtí
-\item kapacitní parametr (např. \texttt{healthcare-capacity}) reprezentující počet současně zvládnutelných vážných případů
-\item při překročení kapacity se efektivní úmrtnost zvyšuje
-\end{itemize}
+Spouštění je zabaleno do skriptů v adresáři \texttt{scripts}. Skript
+\path{run_behaviorspace.*} spouští jeden konkrétní experiment v headless
+režimu NetLogo. Skripty \path{run_all_baselines.*} a
+\texttt{run\_extended\_experiments.*} spouštějí připravené sady experimentů a
+po každém běhu volají \texttt{aggregate\_results.py}. Skript
+\texttt{run\_all\_experiments.*} pouze spojuje obě sady dohromady, aby bylo
+možné jedním příkazem vytvořit všechny raw CSV i agregované summary soubory.
 
-\textbf{Očekávané chování při změnách parametrů:}
-\begin{itemize}
-\item nižší kapacita vede k prudšímu nárůstu úmrtí při vrcholu vlny
-\item vyšší \texttt{transmission-prob} zvyšuje riziko překročení kapacity
-\item vyšší \texttt{fatality-rate} zvyšuje celkové ztráty i bez přetížení
-\end{itemize}
+Agregační skript počítá pro zvolené metriky počet hodnot, průměr, směrodatnou
+odchylku a kvartily. U baseline scénářů agreguje všechny běhy dohromady. U
+rozšířených experimentů používá \texttt{--group-by}, takže výsledky počítá
+odděleně pro každou kombinaci měněných parametrů.
 
-\subsection{Simulace 3: Dočasná imunita, reinfekce a zdroje}
+\subsection{Vazba implementace na cíle práce}
 
-\textbf{Účel:}
-\begin{itemize}
-\item modelovat dlouhodobou dynamiku (více vln)
-\item zavést omezené zdroje využívané jednotlivými agenty
-\end{itemize}
+Implementace podporuje cíl replikační studie třemi způsoby. Zaprvé, jednotlivé
+modely tvoří čitelnou řadu od jednoduchého SEIR modelu po variantu se zdroji,
+vakcinací a strategiemi. Zadruhé, všechny modely exportují kompatibilní metriky,
+což umožňuje přímé srovnání baseline scénářů. Zatřetí, automatizace přes
+BehaviorSpace a skripty v adresáři \texttt{scripts} umožňuje opakované spuštění
+experimentů bez ručního klikání v NetLogo GUI.
 
-\textbf{Nové prvky oproti Simulaci 2:}
-\begin{itemize}
-\item dočasná imunita po uzdravení (\texttt{immunity-hours})
-\item reinfekce po oslabení imunity
-\item parametr dostupnosti zdrojů (např. \texttt{resource-stock} nebo \texttt{resource-regeneration})
-\item spotřeba zdrojů během nemoci (léčba, izolace, péče)
-\end{itemize}
+Zároveň je nutné zdůraznit omezení implementace. Kontakty jsou lokální a
+zjednodušené, populace je syntetická a model není kalibrován na reálná
+epidemiologická data. Výsledky proto slouží hlavně k porovnání mechanismů a
+strategií v kontrolovaném agent-based prostředí, nikoli k predikci reálné
+epidemie.
 
-\textbf{Očekávané chování při změnách parametrů:}
-\begin{itemize}
-\item kratší doba imunity zvyšuje pravděpodobnost další vlny
-\item nižší zásoba nebo pomalejší obnova zdrojů prodlužuje období vysokého zatížení
-\item při vyčerpání zdrojů roste podíl těžkých průběhů a úmrtí
-\end{itemize}
 
-\subsection{Simulace 4: Strategie řízení zdrojů a zásahy}
 
-\textbf{Účel:}
-\begin{itemize}
-\item porovnat různé strategie alokace omezených zdrojů
-\item experimentálně ověřit, které nastavení nejlépe stabilizuje systém
-\end{itemize}
-
-\textbf{Nové prvky oproti Simulaci 3:}
-\begin{itemize}
-\item volba strategie (např. priorita rizikových, priorita prvních případů, rovnoměrná alokace)
-\item volitelný zásah (např. očkování části populace)
-\item přímé porovnání scénářů při stejném seedu a stejných vstupních parametrech
-\end{itemize}
-
-\textbf{Očekávané chování při změnách parametrů:}
-\begin{itemize}
-\item cílená alokace zdrojů typicky snižuje maxima zatížení systému
-\item rovnoměrná alokace bývá robustnější při nejistotě, ale nemusí minimalizovat úmrtí
-\item kombinace strategie a očkování zpravidla zkracuje dobu stabilizace
-\end{itemize}
-
-\subsection{Doporučená metodika experimentů}
-
-Pro každou simulaci je vhodné zachovat stejný experimentální postup:
-\begin{itemize}
-\item pro každou kombinaci parametrů spustit více opakování s různými seedy
-\item sledovat časové řady stavů S/E/I/R, úmrtí, zatížení systému a stav zdrojů
-\item vyhodnocovat průměr, medián, percentily a extrémy
-\item porovnávat scénáře podle metrik:
-  \begin{itemize}
-  \item maximální zatížení systému
-  \item celkový počet úmrtí
-  \item doba do stabilizace
-  \item počet následných vln
-  \end{itemize}
-\end{itemize}
-
-\subsection{Vazba na cíle práce}
-
-Tato čtveřice modelů odpovídá požadavku replikační studie:
-\begin{itemize}
-\item začíná jednoduchým ABM modelem
-\item postupně přidává realističtější mechanismy
-\item umožňuje analyzovat vliv hustoty, přenosu i omezených zdrojů
-\item vytváří jasný experimentální rámec pro porovnání variant
-\end{itemize}
+\end{document}

@@ -1,3 +1,25 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{Agent-based simulace šíření jevů v populaci s omezenými zdroji -- state of the art}
+\author{Lukáš Plachý}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Popis problému}
+
+Cílem této práce je implementovat a analyzovat agent-based simulaci pro studium infekčních jevů v populaci s omezenými zdroji. Konkrétně se zaměříme na následující problémové otázky:
+
+\begin{itemize}
+\item Jak ovlivňují omezené zdroje (zdravotnická kapacita, léčebné prostředky) průběh epidemie?
+\item Jaké strategie alokace zdrojů jsou nejefektivnější pro minimalizaci úmrtí a zatížení systému?
+\item Jak se mění dynamika systému při postupném přidávání realistických mechanismů (úmrtnost, reinfekce, strategie)?
+\end{itemize}
+
+Práce je koncipována jako replikační studie, která navazuje na existující výzkum v oblasti agent-based modelování epidemií a systematicky testuje dopad jednotlivých rozšíření modelu. Implementace probíhá ve třech postupných verzích (virus1--4.nlogo), které umožňují izolovanou analýzu každého mechanismu.
+
 \section{Existující modely a přístupy}
 
 Agent-based simulace šíření jevů v populaci má dlouhou historii a je široce využívána v epidemiologii, sociálních vědách i informatice. Základní modely lze rozdělit podle úrovně abstrakce a způsobu reprezentace populace.
@@ -45,6 +67,59 @@ Použití:
 \item kolektivní chování (swarm intelligence)
 \end{itemize}
 
+\subsubsection{Referenční práce pro replikační studii}
+
+V rámci této práce je zvolen agent-based přístup, protože umožňuje reprezentovat heterogenitu jedinců, prostorové interakce a (v dalších rozšířeních) i vliv omezených zdrojů na průběh epidemie. Implementace je koncipována jako replikační studie inspirovaná dvěma typy zdrojů:
+\begin{itemize}
+\item \textbf{metodologický rámec} pro postupné budování navazujících variant modelu (od jednoduššího k složitějšímu),
+\item \textbf{aplikační rámec} pro srovnání strategií/politik v prostředí s omezenými prostředky.
+\end{itemize}
+
+\textbf{Hunter a Kelleher (2022)} zavádějí myšlenku \emph{agentizace} kompartmentového modelu SEIR a navrhují hierarchii rostoucí komplexity agent-based variant. Cílem je ukázat, kdy se výsledky začnou systematicky odchylovat od výstupů rovnicového SEIR (např. kvůli narušení předpokladů homogenního mísení a homogenní populace). Autoři porovnávají výstupy jednoduchého SEIR s postupně rozšiřovanými ABM a ukazují, že s rostoucí komplexitou se typicky posouvá a snižuje epidemický peak v porovnání s homogenním mísením \cite{hunter-kelleher-2022}. Tento přístup je vhodný jako obhajoba toho, proč je legitimní mít více variant téhož modelu a analyzovat dopad jednotlivých rozšíření odděleně.
+
+\paragraph{Přínos pro tuto práci.} Pro účely semestrální práce je důležitý zejména design pattern: začít jednoduchým agent-based SEIR/SEIR-like modelem (baseline), a poté přidávat jeden mechanismus po druhém (např. úmrtnost, kapacitní omezení, zdroje, heterogenita a strategie), aby bylo možné:
+\begin{itemize}
+\item odděleně diskutovat, \emph{který} mechanismus způsobí změnu pozorovaných metrik (např. peak, doba do stabilizace, počet úmrtí),
+\item obhájit, proč je experimentální srovnání navazujících verzí věcně smysluplné a metodologicky čisté.
+\end{itemize}
+Autoři zároveň ukazují, že odchylky od rovnicového SEIR se mohou objevit ve chvíli, kdy se do modelu explicitně promítne realističtější heterogenita mísení (např. přes plánovaný pohyb), což je přímo relevantní pro interpretaci rozdílů mezi jednodušší a složitější verzí ABM \cite{hunter-kelleher-2022}.
+
+\textbf{Adam a Arduin} cílí na srozumitelné srovnání intervenčních strategií při omezených prostředcích. V jejich práci je agent-based model záměrně zjednodušený (nejde o predikci), ale slouží k experimentálnímu porovnání např. screeningových strategií při omezeném počtu testů a vakcinačních prioritizačních strategií (např. zranitelní vs. vysoce kontaktní) \cite{adam-arduin-2022}. Tato perspektiva přímo motivuje rozšíření modelu o parametry typu \emph{omezený zdroj} a \emph{strategii alokace}, protože umožňuje testovat "co kdyby" scénáře a porovnávat politiky na konzistentním experimentálním nastavení.
+
+\paragraph{Přínos pro tuto práci.} Z pohledu semestrální práce je důležité, že Adam a Arduin explicitně rámují simulaci jako nástroj pro porovnávání strategií při omezených kapacitách (např. limitovaný počet testů, prioritizace vakcinace). To odpovídá situaci, kdy:
+\begin{itemize}
+\item existuje konflikt více cílů (např. minimalizovat úmrtí vs. minimalizovat peak infekčních / přetížení systému),
+\item rozhodnutí je nutné dělat za podmínek nedostatku (kapacitní omezení nebo explicitní spotřeba zdrojů),
+\item je potřeba srovnat jednoduché, dobře interpretovatelné strategie (např. bez priority vs. priorita rizikových skupin).
+\end{itemize}
+Tento typ práce je vhodný jako "base paper" pro tvrzení, že cílem není realistická predikce, ale replikovatelný experimentální rámec pro porovnání strategií v ABM \cite{adam-arduin-2022}.
+
+V této práci jsou oba zdroje kombinovány: Hunter a Kelleher poskytují metodologickou logiku "navazujících verzí" a Adam a Arduin poskytují aplikační motivaci pro porovnávání strategií v prostředí s omezenými prostředky.
+
+\section{Přehled použitého materiálu a nástrojů}
+
+\subsection{Softwarové nástroje}
+\begin{itemize}
+\item \textbf{NetLogo 6.3} -- prostředí pro agent-based modelování s vestavěnou podporou BehaviorSpace pro hromadné experimenty
+\item \textbf{BehaviorSpace} -- nástroj pro automatizované experimenty a statistické vyhodnocení
+\item \textbf{Python} -- skripty pro agregaci a vizualizaci výsledků
+\end{itemize}
+
+\subsection{Implementační soubory}
+\begin{itemize}
+\item \texttt{virus1.nlogo} -- základní SEIR model
+\item \texttt{virus2.nlogo} -- SEIR + úmrtnost + kapacita systému
+\item \texttt{virus3.nlogo} -- omezené zdroje a reinfekce
+\item \texttt{virus4.nlogo} -- strategie alokace zdrojů a vakcinace
+\end{itemize}
+
+\subsection{Referenční práce}
+\begin{itemize}
+\item Hunter a Kelleher (2022) -- metodologický rámec pro postupné přidávání komplexity
+\item Adam a Arduin (2022) -- porovnávání strategií při omezených zdrojích
+\item ODD protokol -- standardizovaný popis agent-based modelů
+\end{itemize}
+
 \subsection{Celulární automaty}
 
 Celulární automaty představují diskrétní model prostoru:
@@ -68,94 +143,15 @@ Ve srovnání s ABM:
 \item méně flexibilní reprezentace agentů
 \end{itemize}
 
-\subsection{Síťové modely}
-
-Další přístup využívá explicitní grafové struktury:
-
-\begin{itemize}
-\item uzly reprezentují jedince
-\item hrany reprezentují interakce
-\end{itemize}
-
-Typy sítí:
-\begin{itemize}
-\item náhodné grafy (Erdős--Rényi)
-\item scale-free sítě
-\item small-world sítě
-\end{itemize}
-
-Tyto modely umožňují studovat:
-\begin{itemize}
-\item vliv topologie na šíření
-\item vznik super-spreaderů
-\end{itemize}
-
-\section{Existující nástroje a prostředí}
-
-\subsection{NetLogo}
-
-NetLogo je specializované prostředí pro agent-based simulace.
-
-Vlastnosti:
-\begin{itemize}
-\item deklarativní definice agentů (turtles) a prostředí (patches)
-\item diskrétní časový model (ticks)
-\item vestavěná vizualizace
-\end{itemize}
-
-Výhody:
-\begin{itemize}
-\item rychlá implementace modelů
-\item vhodné pro experimentální analýzu
-\end{itemize}
-
-Omezení:
-\begin{itemize}
-\item omezený výkon
-\item menší kontrola nad nízkoúrovňovým chováním
-\end{itemize}
-
-\subsection{Mesa (Python)}
-
-Mesa je knihovna pro agent-based simulace v jazyce Python.
-
-Vlastnosti:
-\begin{itemize}
-\item flexibilní definice agentů
-\item integrace s Python ekosystémem
-\end{itemize}
-
-Nevýhody:
-\begin{itemize}
-\item vyšší runtime overhead
-\end{itemize}
-
-\subsection{Repast}
-
-Repast je pokročilý framework pro ABM:
-
-\begin{itemize}
-\item podpora velkých simulací
-\item integrace s Java/C++
-\end{itemize}
-
-Nevýhody:
-\begin{itemize}
-\item vyšší komplexita
-\end{itemize}
-
-\subsection{Porovnání nástrojů}
-
-\begin{center}
-\begin{tabular}{lccc}
-\textbf{Nástroj} & \textbf{Jednoduchost} & \textbf{Výkon} & \textbf{Flexibilita} \
-NetLogo & vysoká & nízký & střední \
-Mesa & střední & nízký & vysoká \
-Repast & nízká & vysoký & vysoká \
-\end{tabular}
-\end{center}
-
 \section{Volba přístupu}
+
+Tato práce je koncipována jako \textbf{replikační studie} a zároveň jako \textbf{kontrolovaný experiment} s rostoucí komplexitou modelu. Primárním cílem není vytvořit prediktivní epidemiologický model kalibrovaný na reálná data, ale implementovat srozumitelný ABM, který umožní systematicky testovat dopad jednotlivých mechanismů (kapacita, explicitní zdroje, strategie alokace, heterogenita) a porovnávat scénáře při opakováních se stejnou experimentální metodikou.
+
+Zvolený přístup vychází ze dvou inspiračních linií:
+\begin{itemize}
+\item \textbf{metodologie postupného přidávání komplexity} v agentizované verzi SEIR, kde lze jednotlivé rozšíření analyzovat izolovaně \cite{hunter-kelleher-2022},
+\item \textbf{porovnávání strategií/politik} v prostředí s omezenými prostředky, kde je ABM použit jako vysvětlující nástroj pro "co kdyby" experimenty \cite{adam-arduin-2022}.
+\end{itemize}
 
 Na základě analýzy existujících modelů a nástrojů byl zvolen následující přístup:
 
@@ -168,128 +164,127 @@ Na základě analýzy existujících modelů a nástrojů byl zvolen následují
 Tato kombinace umožňuje:
 
 \begin{itemize}
-\item snadnou implementaci a vizualizaci
-\item dostatečnou flexibilitu pro experimenty
-\item zaměření na emergentní jevy namísto nízkoúrovňových detailů
+\item \textbf{interpretovatelnost} (jednoduchá pravidla, jasné metriky a možnost vysvětlit příčiny rozdílů mezi variantami),
+\item \textbf{reprodukovatelné experimenty} (opakování se seedy, systematické procházení parametrů a automatizace přes BehaviorSpace),
+\item \textbf{rychlou iteraci} a vizualizaci, což je vhodné pro replikační studii a didaktické porovnání strategií.
 \end{itemize}
 
-Zvolený přístup je vhodný zejména pro replikační studii, kde je cílem analyzovat známý model a ověřit jeho vlastnosti za různých podmínek.
+\subsection*{Vymezení rozsahu a chybějící prvky oproti realistickým ABM}
 
-
-\section{Specifikace simulace}
-
-Tato práce se zaměřuje na návrh a implementaci simulace založené na agentním přístupu (agent-based simulation), která modeluje šíření jevu v populaci při omezených zdrojích a interakcích mezi jednotlivými entitami.
-
-\subsection{Typ simulace}
-
-Navržený model spadá do kategorie:
-
+Ve srovnání s realistickými kalibrovanými ABM (např. modely pro konkrétní města/populace) zde záměrně chybí řada detailů, protože by snížily kontrolu nad experimentem a ztížily reimplementaci. Konkrétně:
 \begin{itemize}
-\item \textbf{mikroskopická simulace} -- modeluje jednotlivé entity (agenty)
-\item \textbf{agent-based model (ABM)} -- chování systému vzniká z lokálních interakcí
-\item \textbf{diskrétní časová simulace} -- systém je aktualizován v diskrétních krocích (ticks)
+\item kontakty jsou modelovány jednoduše (lokální interakce v prostoru), bez explicitních domácností, škol, pracovních míst a datově odvozených kontaktů,
+\item chybí kalibrace na reálná data a validace pro konkrétní patogen/lokalitu; model je primárně ilustrativní a srovnávací,
+\item zásahy jsou reprezentovány zjednodušeně (např. kapacita systému, explicitní zdroje léčby, jednoduchá vakcinace/prioritizace), bez detailní farmakologie a klinických stavů.
 \end{itemize}
 
-Každý agent reprezentuje autonomní jednotku s vlastním stavem a pravidly chování.
+Tento minimalismus je zvolen záměrně: umožňuje transparentně ukázat, jak se mění výsledky při přidání konkrétního mechanismu, a současně držet počet předpokladů nízko tak, aby byla replikační studie obhajitelná.
 
-\subsection{Popis modelu}
+NetLogo je zvolen zejména kvůli přímé podpoře ABM a dostupným nástrojům pro hromadné experimenty (BehaviorSpace). Zároveň je třeba zdůraznit, že takto pojatý model je kompromisem: upřednostňuje \textbf{experimentální kontrolu a srozumitelnost} před vysokou věrností kontaktů a kalibrací na data. Pro popis a porovnatelnost agent-based modelů je vhodné držet se strukturovaného popisu (např. ODD), aby bylo zřejmé, které části jsou převzaté z referenčních prací a které představují záměrná rozšíření \cite{grimm-2010-odd-update}.
 
-Model reprezentuje populaci agentů, kteří se pohybují v prostoru a interagují s ostatními agenty ve svém okolí.
 
-Každý agent je charakterizován:
+\section{Nástin řešení}
+
+Práce bude probíhat ve čtyřech fázích, které odpovídají postupnému rozšiřování modelu a umoují systematickou analýzu dopadu jednotlivých mechanismů.
+
+\subsection{Fáze 1: Základní SEIR model (virus1.nlogo)}
 \begin{itemize}
-\item stavem (např. zdravý, infikovaný, zotavený)
-\item pozicí v prostoru
-\item množstvím dostupných zdrojů
+\item Implementace jednoduchého agent-based SEIR modelu
+\item Ověření základní mechaniky šíření
+\item Referenční měření bez dalších zásahů
+\item Sledování základních metrik: počet nakažených, doba stabilizace
 \end{itemize}
 
-Interakce mezi agenty probíhají lokálně:
+\subsection{Fáze 2: PŘIDÁNÍ ÚMRTNOSTI A KAPACITY SYSTÉMU (virus2.nlogo)}
 \begin{itemize}
-\item přenos jevu (např. infekce) při kontaktu
-\item konkurence o omezené zdroje
+\item Zavedení pravděpodobnosti úmrtí
+\item Implementace omezené zdravotnické kapacity
+\item Analýza vlivu přetížení systému na úmrtnost
+\item Srovnání s bezkapacitním modelem
 \end{itemize}
 
-\subsection{Vstupní parametry}
-
-Simulace je parametrizována následujícími vstupy:
-
+\subsection{Fáze 3: OMEZENÉ ZDROJE A REINFEKCE (virus3.nlogo)}
 \begin{itemize}
-\item počet agentů
-\item hustota populace
-\item pravděpodobnost interakce
-\item pravděpodobnost přenosu jevu
-\item rychlost pohybu agentů
-\item množství dostupných zdrojů
-\item strategie využívání zdrojů
+\item Modelování spotřebovávatelných zdrojů (léčba, izolace)
+\item Implementace dočasné imunity a reinfekcí
+\item Studium dlouhodobé dynamiky a více vln
+\item Analýza vlivu vyčerpání zdrojů na průběh epidemie
 \end{itemize}
 
-Distribuce některých parametrů může být náhodná:
+\subsection{Fáze 4: STRATEGIE ALOKACE ZDROJŮ A VAKCINACE (virus4.nlogo)}
 \begin{itemize}
-\item prostorové rozložení agentů
-\item počáteční stav systému
+\item Implementace různých strategií alokace (prioritizace rizikových, rovnoměrná)
+\item Přidání vakcinace jako dalšího nástroje
+\item Porovnání efektivity jednotlivých strategií
+\item Testování kombinací strategií a vakcinace
 \end{itemize}
 
-\subsection{Výstupy simulace}
-
-Simulace bude produkovat následující metriky:
-
+\subsection{Metodologie experiment}
 \begin{itemize}
-\item počet agentů v jednotlivých stavech v čase
-\item rychlost šíření jevu
-\item maximální zatížení systému
-\item doba do stabilizace systému
+\item Pro kadou fázi bude definován baseline scénář
+\item Postup one-factor-at-a-time (OFAT) pro klíčové parametry
+\item 10 opakování pro každou konfiguraci (různé seedy)
+\item Sledování metrik: peak infekčních, úmrtí, doba stabilizace, vyčerpání zdrojů
 \end{itemize}
 
-Výsledky budou analyzovány pomocí:
-\begin{itemize}
-\item časových řad
-\item statistických agregací (průměr, percentily)
-\end{itemize}
+\subsection{Pozice vůči state-of-the-art}
 
-\subsection{Hypotézy}
+State-of-the-art agent-based modelování epidemií zahrnuje jak \textbf{velmi detailní kalibrované modely} (často s realistickými kontaktními sítěmi, demografií a více typů intervencí), tak i \textbf{zjednodušené vysvětlující modely} určené pro srovnání principů a strategií. Například Covasim je open-source agent-based model COVID-19, který zahrnuje široké spektrum intervencí (testing, contact tracing, quarantine, vaccination aj.) a je určen pro policy analýzy \cite{kerr-2021-covasim}. Podobně existují i vysoce detailní "high-resolution" ABM zaměřené na města a jemné scénáře testování, léčby a vakcinace \cite{truszkowska-2021-highres}.
 
-Práce bude ověřovat následující hypotézy:
 
-\begin{itemize}
-\item zvýšení hustoty populace vede k nelineárnímu růstu rychlosti šíření
-\item omezené zdroje zpomalují šíření, ale mohou způsobit lokální kolapsy
-\item heterogenita agentů (např. rozdílné chování) stabilizuje systém
-\end{itemize}
+\subsection{Standardy popisu a reprodukovatelnost ABM}
 
-\subsection{Metodologie experimentů}
+Pro odborný popis agent-based modelů a podporu reprodukovatelnosti se často používá protokol ODD (Overview, Design Concepts, Details). ODD byl navržen jako standardizovaný rámec pro popis IB/AB modelů \cite{grimm-2006-odd} a následně byl revidován a upřesněn v aktualizaci ODD \cite{grimm-2010-odd-update}. V kontextu replikační studie je takový strukturovaný popis důležitý, protože snižuje nejednoznačnost při reimplementaci a umožňuje čtenáři porovnat, které části modelu odpovídají referenční práci a které představují záměrné rozšíření.
 
-Experimenty budou prováděny opakovaně s různými parametry:
+\subsection{Škálování směrem k realistickým kontaktům}
 
-\begin{itemize}
-\item změna hustoty populace
-\item změna pravděpodobnosti přenosu
-\item změna množství zdrojů
-\end{itemize}
+Zatímco jednoduché ABM často pracují s implicitním prostorem a lokálními kontakty, část literatury cílí na realistické kontaktní vzory (např. pohyb osob mezi lokacemi a dynamické kontaktní grafy). Klasickým příkladem je práce modelující epidemie na realistických městských sociálních sítích odvozených z mobility a dat \cite{eubank-2004-nature}. Takové modely jsou typicky náročnější na data i výpočet, ale poskytují vyšší věrnost pro konkrétní lokalitu. V této práci je prostorová interakce zvolena záměrně jednoduše, aby zůstala zachována interpretovatelnost a možnost rozsáhlých experimentů (více seedů a parametrických konfigurací).
 
-Každý experiment bude:
-\begin{itemize}
-\item opakován vícekrát (různé seedy)
-\item vyhodnocen statisticky
-\end{itemize}
+\begin{thebibliography}{99}
 
-\subsection{Použitý nástroj}
+\bibitem{hunter-kelleher-2022}
+Elizabeth Hunter and John~D. Kelleher.
+\newblock Understanding the assumptions of an SEIR compartmental model using agentization and a complexity hierarchy.
+\newblock \emph{Journal of Computational Mathematics and Data Science}, 4:100056, 2022.
+\newblock DOI: 10.1016/j.jcmds.2022.100056.
 
-Simulace bude implementována v prostředí \textbf{NetLogo}.
+\bibitem{adam-arduin-2022}
+Carole Adam and H{\'e}l{\`e}ne Arduin.
+\newblock An agent-based epidemics simulation to compare and explain screening and vaccination prioritisation strategies.
+\newblock \emph{arXiv preprint}, arXiv:2210.13089, 2022.
+\newblock DOI: 10.48550/arXiv.2210.13089. Published as: \emph{SIMULATION} (2024), DOI: 10.1177/00375497231178303.
 
-Důvody volby:
-\begin{itemize}
-\item přímá podpora agent-based modelů
-\item jednoduchá definice lokálních interakcí
-\item vizualizace průběhu simulace
-\end{itemize}
+\bibitem{kerr-2021-covasim}
+Cliff C. Kerr, Robyn M. Stuart, Dina Mistry, Romesh G. Abeysuriya, Katherine Rosenfeld, Gregory R. Hart, Rafael C. N{\'u}{\~n}ez, Jamie A. Cohen, Prashanth Selvaraj, Brittany Hagedorn, et al.
+\newblock Covasim: An agent-based model of COVID-19 dynamics and interventions.
+\newblock \emph{PLOS Computational Biology}, 17(7):e1009149, 2021.
+\newblock DOI: 10.1371/journal.pcbi.1009149.
 
-Omezení:
-\begin{itemize}
-\item omezená kontrola nad časovým modelem
-\item nižší výkon pro velké simulace
-\end{itemize}
+\bibitem{truszkowska-2021-highres}
+Agnieszka Truszkowska, Brandon Behring, Jalil Hasanyan, Lorenzo Zino, Sachit Butail, Emanuele Caroppo, et al.
+\newblock High-Resolution Agent-Based Modeling of COVID-19 Spreading in a Small Town.
+\newblock \emph{Advanced Theory and Simulations}, 4(3):2170005, 2021.
+\newblock DOI: 10.1002/adts.202170005.
 
-\subsection{Shrnutí}
+\bibitem{grimm-2006-odd}
+Volker Grimm, Uta Berger, Finn Bastiansen, Sigrunn Eliassen, Vincent Ginot, Jarl Giske, John Goss-Custard, Tamara Grand, Simone K. Heinz, Geir Huse, Andreas Huth, Jane U. Jepsen, Christian J{\o}rgensen, Wolf M. Mooij, Birgit M{\"u}ller, Guy Pe'er, Cyril Piou, Steven F. Railsback, Andrew M. Robbins, Martha M. Robbins, Eva Rossmanith, Nadja R{\"u}ger, Espen Strand, Sami Souissi, Richard A. Stillman, Rune Vabo, Ute Visser, and Donald L. DeAngelis.
+\newblock A standard protocol for describing individual-based and agent-based models.
+\newblock \emph{Ecological Modelling}, 198(1--2):115--126, 2006.
+\newblock DOI: 10.1016/j.ecolmodel.2006.04.023.
 
-Navržený model umožňuje studovat emergentní chování systému vznikající z jednoduchých lokálních pravidel. Zaměřuje se zejména na vliv interakcí, hustoty a omezených zdrojů na dynamiku systému.
+\bibitem{grimm-2010-odd-update}
+Volker Grimm, Uta Berger, Donald L. DeAngelis, J. Gary Polhill, Jarl Giske, and Steve F. Railsback.
+\newblock The ODD protocol: A review and first update.
+\newblock \emph{Ecological Modelling}, 221(23):2760--2768, 2010.
+\newblock DOI: 10.1016/j.ecolmodel.2010.08.019.
 
+\bibitem{eubank-2004-nature}
+Stephen Eubank, Hasan Guclu, V. S. Anil Kumar, Madhav V. Marathe, Aravind Srinivasan, Zolt{\'a}n Toroczkai, and Nan Wang.
+\newblock Modelling disease outbreaks in realistic urban social networks.
+\newblock \emph{Nature}, 429:180--184, 2004.
+\newblock DOI: 10.1038/nature02541.
+
+\end{thebibliography}
+
+
+\end{document}

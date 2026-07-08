@@ -36,6 +36,10 @@ make extended NETLOGO="/path/to/NetLogo-7.0.3"
 make all NETLOGO="/path/to/NetLogo-7.0.3"
 ```
 
+Target `baseline` spustí výchozí scénáře a rovnou vytvoří `*_baseline_summary.csv`.
+Target `extended` spustí OFAT/grid scénáře a rovnou vytvoří jejich `*_summary.csv`.
+Target `all` spustí obě sady experimentů přes `scripts/run_all_experiments.sh`.
+
 Bez předání `NETLOGO` se použije výchozí hodnota z `Makefile` (`/opt/NetLogo-7.0.3`), která na konkrétním systému nemusí existovat.
 
 ## Známý problém na Linuxu (`Could not find or load main class []`)
@@ -139,4 +143,4 @@ Bez mapování `DISPLAY` a `/tmp/.X11-unix` dojde k chybě `java.awt.HeadlessExc
 
 ## Další dokumentace
 
-- Detailní workflow a příklady příkazů jsou v `scripts/automation.md`.
+- Detailní workflow a příklady příkazů jsou v `scripts/README.md`.
