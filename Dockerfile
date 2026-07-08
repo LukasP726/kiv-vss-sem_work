@@ -12,7 +12,7 @@ RUN apt-get update \
        python3 python3-pip python-is-python3 make ca-certificates curl tar \
        xauth libgtk-3-0 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libxrandr2 libasound2t64 \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --no-cache-dir matplotlib seaborn pandas
+    && pip3 install --break-system-packages --no-cache-dir matplotlib seaborn pandas
 
 RUN mkdir -p /opt \
     && curl -fsSL "${NETLOGO_URL}" -o "/tmp/${NETLOGO_ARCHIVE}" \
