@@ -23,6 +23,13 @@ def load_summary_files(input_dir):
         df = pd.read_csv(f)
         model_name = os.path.basename(f).replace("_summary.csv", "")
         df["model"] = model_name
+        
+        # Determine if this is baseline or extended based on columns
+        if "group" in df.columns:
+            df["experiment_type"] = "baseline"
+        else:
+            df["experiment_type"] = "extended"
+        
         data.append(df)
     
     if not data:
@@ -33,23 +40,23 @@ def load_summary_files(input_dir):
 
 def plot_model_comparison(df, output_dir):
     """Create bar chart comparing key metrics across models."""
-    # Filter to baseline results only (no grouping columns)
-    baseline = df[df["group"] == "all_runs"].copy()
+    # Filter to baseline results only
+    baseline = df[df["experiment_type"] == "baseline"].copy()
     
-    # Key metrics to compare
-    metrics = [
-        "m_final_susceptible_mean",
-        "m_final_infected_mean", 
-        "m_final_recovered_mean",
-        "m_ever_infected_mean",
-        "m_deaths_mean"
-    ]
+    if baseline.empty:
+        print("No baseline data found for comparison")
+        return
     
-    # Filter to available metrics
-    available_metrics = [m for m in metrics if m in baseline.columns]
+    # Get all available mean metrics (excluding n, std, p25, p50, p75)
+    mean_cols = [col for col in baseline.columns if col.endswith("_mean")]
+    
+    # Focus on key outcome metrics
+    key_metrics = ["m_ever_infected_mean", "m_deaths_mean", "m_ticks_mean", 
+                   "m_final_infected_mean", "m_final_recovered_mean"]
+    available_metrics = [m for m in key_metrics if m in baseline.columns]
     
     if not available_metrics:
-        print("No baseline metrics found for comparison")
+        print("No key metrics found in baseline data")
         return
     
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -63,12 +70,13 @@ def plot_model_comparison(df, output_dir):
         # Extract metric name for title
         metric_name = metric.replace("_mean", "").replace("m_", "").replace("_", " ").title()
         
-        baseline.sort_values("model", inplace=True)
-        ax.bar(baseline["model"], baseline[metric], color="steelblue")
+        baseline_sorted = baseline.sort_values("model")
+        ax.bar(baseline_sorted["model"], baseline_sorted[metric], color="steelblue")
         ax.set_title(metric_name)
         ax.set_xlabel("Model")
         ax.set_ylabel("Mean Value")
         ax.tick_params(axis="x", rotation=45)
+        ax.grid(True, alpha=0.3, axis='y')
     
     # Hide unused subplots
     for i in range(len(available_metrics), len(axes)):
@@ -82,37 +90,48 @@ def plot_model_comparison(df, output_dir):
 
 
 def plot_metric_distributions(df, output_dir):
-    """Create boxplots for metric distributions."""
-    # Look for columns with std values to identify metrics with distributions
-    metric_cols = [col for col in df.columns if col.endswith("_std")]
+    """Create error bar plots showing mean ± std for key metrics."""
+    # Filter to baseline results
+    baseline = df[df["experiment_type"] == "baseline"].copy()
     
-    if not metric_cols:
-        print("No distribution data found")
+    if baseline.empty:
+        print("No baseline data found for distributions")
         return
     
-    # Get base metric names
-    base_metrics = sorted(set(col.replace("_std", "") for col in metric_cols))
+    # Get key metrics with std values
+    key_metrics = ["m_ever_infected", "m_deaths", "m_ticks", 
+                   "m_final_infected", "m_final_recovered"]
     
-    # Filter to baseline results
-    baseline = df[df["group"] == "all_runs"].copy()
+    available_metrics = []
+    for base in key_metrics:
+        mean_col = f"{base}_mean"
+        std_col = f"{base}_std"
+        if mean_col in baseline.columns and std_col in baseline.columns:
+            available_metrics.append(base)
+    
+    if not available_metrics:
+        print("No metrics with std data found")
+        return
     
     # Create subplots
-    n_metrics = min(len(base_metrics), 6)
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-    axes = axes.flatten()
+    n_metrics = len(available_metrics)
+    n_cols = min(n_metrics, 3)
+    n_rows = (n_metrics + n_cols - 1) // n_cols
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
+    if n_metrics == 1:
+        axes = [[axes]]
+    elif n_rows == 1:
+        axes = [axes]
+    axes = [ax if isinstance(ax, list) else [ax] for row in axes for ax in (row if isinstance(row, list) else [row])]
+    axes = axes[:n_metrics]
     
-    for i, base_metric in enumerate(base_metrics[:6]):
-        if i >= len(axes):
-            break
+    for i, base_metric in enumerate(available_metrics):
         ax = axes[i]
         
         mean_col = f"{base_metric}_mean"
         std_col = f"{base_metric}_std"
         
-        if mean_col not in baseline.columns or std_col not in baseline.columns:
-            continue
-        
-        # Create simple error bar plot (mean ± std)
+        # Create error bar plot (mean ± std)
         baseline_sorted = baseline.sort_values("model")
         x_pos = range(len(baseline_sorted))
         
@@ -123,7 +142,9 @@ def plot_metric_distributions(df, output_dir):
             fmt="o",
             capsize=5,
             capthick=2,
-            color="darkorange"
+            color="darkorange",
+            linewidth=2,
+            markersize=8
         )
         
         metric_name = base_metric.replace("m_", "").replace("_", " ").title()
@@ -132,10 +153,7 @@ def plot_metric_distributions(df, output_dir):
         ax.set_ylabel("Value (mean ± std)")
         ax.set_xticks(x_pos)
         ax.set_xticklabels(baseline_sorted["model"], rotation=45, ha="right")
-    
-    # Hide unused subplots
-    for i in range(n_metrics, len(axes)):
-        axes[i].set_visible(False)
+        ax.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
     output_path = os.path.join(output_dir, "metric_distributions.png")
@@ -146,7 +164,11 @@ def plot_metric_distributions(df, output_dir):
 
 def plot_correlation_heatmap(df, output_dir):
     """Create correlation heatmap for key metrics."""
-    baseline = df[df["group"] == "all_runs"].copy()
+    baseline = df[df["experiment_type"] == "baseline"].copy()
+    
+    if baseline.empty:
+        print("No baseline data found for correlation analysis")
+        return
     
     # Get numeric mean columns
     mean_cols = [col for col in baseline.columns if col.endswith("_mean")]
@@ -165,10 +187,11 @@ def plot_correlation_heatmap(df, output_dir):
     corr = data.corr()
     
     # Create heatmap
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(12, 10))
     sns.heatmap(corr, annot=True, cmap="coolwarm", center=0, 
-                square=True, linewidths=0.5, cbar_kws={"shrink": 0.8}, ax=ax)
-    ax.set_title("Metric Correlations")
+                square=True, linewidths=0.5, cbar_kws={"shrink": 0.8}, ax=ax,
+                annot_kws={"size": 8}, fmt=".2f")
+    ax.set_title("Metric Correlations (Baseline)")
     plt.tight_layout()
     
     output_path = os.path.join(output_dir, "correlation_heatmap.png")
@@ -179,33 +202,35 @@ def plot_correlation_heatmap(df, output_dir):
 
 def plot_parameter_sensitivity(df, output_dir):
     """Create line plots for parameter sensitivity analysis (extended experiments)."""
-    # Filter out baseline results
-    extended = df[df["group"] != "all_runs"].copy()
+    # Filter to extended results
+    extended = df[df["experiment_type"] == "extended"].copy()
     
     if extended.empty:
         print("No extended experiment data found")
-        return
-    
-    # Identify grouping columns (parameter columns)
-    param_cols = [col for col in extended.columns if col not in ["model", "group"] and not col.endswith("_mean") and not col.endswith("_std") and not col.endswith("_n") and not col.endswith("_p25") and not col.endswith("_p50") and not col.endswith("_p75")]
-    
-    if not param_cols:
-        print("No parameter columns found in extended data")
-        return
-    
-    # Get key metrics to plot
-    metrics = ["m_ever_infected_mean", "m_deaths_mean", "m_ticks_mean"]
-    available_metrics = [m for m in metrics if m in extended.columns]
-    
-    if not available_metrics:
-        print("No key metrics found in extended data")
         return
     
     # For each model with extended data, create plots
     for model_name in extended["model"].unique():
         model_data = extended[extended["model"] == model_name].copy()
         
-        # Use the first parameter column as x-axis
+        # Identify parameter columns (non-metric columns)
+        metric_suffixes = ["_mean", "_std", "_n", "_p25", "_p50", "_p75"]
+        param_cols = [col for col in model_data.columns 
+                      if col not in ["model", "experiment_type"] 
+                      and not any(col.endswith(suffix) for suffix in metric_suffixes)]
+        
+        if not param_cols:
+            print(f"No parameter columns found for {model_name}")
+            continue
+        
+        # Get available metrics
+        mean_cols = [col for col in model_data.columns if col.endswith("_mean")]
+        
+        if not mean_cols:
+            print(f"No mean metrics found for {model_name}")
+            continue
+        
+        # Use the first parameter as x-axis
         param_col = param_cols[0]
         
         # Check if parameter is numeric
@@ -215,20 +240,34 @@ def plot_parameter_sensitivity(df, output_dir):
         except (ValueError, TypeError):
             is_numeric = False
         
-        n_metrics = len(available_metrics)
-        fig, axes = plt.subplots(1, n_metrics, figsize=(5 * n_metrics, 4))
-        if n_metrics == 1:
-            axes = [axes]
+        # Plot top 4-6 metrics
+        metrics_to_plot = mean_cols[:6]
+        n_metrics = len(metrics_to_plot)
+        n_cols = min(n_metrics, 2)
+        n_rows = (n_metrics + n_cols - 1) // n_cols
         
-        for i, metric in enumerate(available_metrics):
-            ax = axes[i]
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
+        if n_metrics == 1:
+            axes = [[axes]]
+        elif n_rows == 1:
+            axes = [axes]
+        axes_flat = []
+        for row in axes:
+            if isinstance(row, list):
+                axes_flat.extend(row)
+            else:
+                axes_flat.append(row)
+        axes_flat = axes_flat[:n_metrics]
+        
+        for i, metric in enumerate(metrics_to_plot):
+            ax = axes_flat[i]
             
             if is_numeric:
                 # Sort by parameter for line plot
                 model_data_sorted = model_data.sort_values(param_col)
                 ax.plot(model_data_sorted[param_col], model_data_sorted[metric], 
-                        marker='o', linewidth=2, markersize=6)
-                ax.set_xlabel(param_col.replace("_", " ").title())
+                        marker='o', linewidth=2, markersize=6, color='steelblue')
+                ax.set_xlabel(param_col.replace("-", " ").replace("_", " ").title())
             else:
                 # Bar plot for categorical parameters
                 model_data_sorted = model_data.sort_values(param_col)
@@ -236,9 +275,9 @@ def plot_parameter_sensitivity(df, output_dir):
                 ax.bar(x_pos, model_data_sorted[metric], color="coral")
                 ax.set_xticks(x_pos)
                 ax.set_xticklabels(model_data_sorted[param_col], rotation=45, ha="right")
-                ax.set_xlabel(param_col.replace("_", " ").title())
+                ax.set_xlabel(param_col.replace("-", " ").replace("_", " ").title())
             
-            metric_name = metric.replace("_mean", "").replace("m_", "").replace("_", " ").title()
+            metric_name = metric.replace("_mean", "").replace("m_", "").replace("-", " ").replace("_", " ").title()
             ax.set_ylabel(metric_name)
             ax.set_title(f"{model_name}: {metric_name}")
             ax.grid(True, alpha=0.3)
@@ -260,6 +299,8 @@ def main():
     print(f"Loading summary files from {args.input_dir}...")
     df = load_summary_files(args.input_dir)
     print(f"Loaded {len(df)} rows from {df['model'].nunique()} models")
+    print(f"  - Baseline experiments: {len(df[df['experiment_type'] == 'baseline'])} rows")
+    print(f"  - Extended experiments: {len(df[df['experiment_type'] == 'extended'])} rows")
     
     # Generate visualizations
     print("\nGenerating visualizations...")
