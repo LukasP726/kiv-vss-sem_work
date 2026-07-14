@@ -17,6 +17,7 @@ jsou určeny pro reprodukovatelné získání CSV souborů používaných ve vý
   rozšířené experimenty v jednom kroku.
 - `aggregate_results.py` agreguje raw CSV výstupy z BehaviorSpace do souhrnných
   tabulek.
+- `visualize_results.py` generuje vizualizace experimentálních výsledků.
 
 Hromadné skripty volají `aggregate_results.py` automaticky, takže po jejich
 dokončení vznikají jak raw CSV soubory, tak odpovídající `*_summary.csv`
@@ -95,6 +96,33 @@ python .\scripts\aggregate_results.py `
 
 Argument `--group-by` se používá u experimentů s více konfiguracemi parametrů,
 například podle `strategy-mode,high-risk-share,vaccination-rate`.
+
+## Vizualizace výsledků
+
+Po spuštění experimentů lze vygenerovat vizualizace pomocí:
+
+```bash
+python3 scripts/visualize_results.py --input-dir out --output-dir out/figures
+```
+
+Nebo přes Makefile (Linux/Docker):
+
+```bash
+make visualize
+```
+
+Skript vygeneruje následující grafy do `out/figures/`:
+
+**Baseline experimenty:**
+- `model_comparison.png` - sloupcové grafy porovnávající klíčové metriky mezi modely
+- `metric_distributions.png` - error bar ploty (mean ± std) pro rozdělení metrik
+- `correlation_heatmap.png` - korelační heatmapa mezi metrikami
+
+**Extended experimenty:**
+- `*_parameter_sensitivity.png` - vizualizace citlivosti na parametry:
+  - OFAT experimenty (1 parametr): line ploty
+  - Grid experimenty (2 parametry): heatmapy
+  - Grid experimenty (3 parametry): multi-heatmapy (fixace jednoho parametru, heatmapy pro ostatní dva)
 
 ## Poznámka pro Linux/WSL
 
